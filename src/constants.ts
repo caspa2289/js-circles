@@ -11,3 +11,4 @@ export const CIRCLE_LENGTH =
 export const MAX_CIRCLE_COUNT = 1000
 export const GRAVITY_CONST = 0.25
 export const PHYSICS_ITERATIONS_COUNT = 2
+export const CIRCLE_BOUNCINESS = 0.45
