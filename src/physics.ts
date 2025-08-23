@@ -1,28 +1,30 @@
 import {
     CIRCLE_BOUNCINESS,
     GRAVITY_CONST,
+    MAX_CIRCLE_COUNT,
     PHYSICS_ITERATIONS_COUNT,
 } from './constants'
 import { render2d, setup2dContext } from './render2d'
+import { renderWebGPU, setupWebGPUContext } from './renderWebGPU'
 import { Circle } from './types'
 
 const TINY_OFFSET = 0.0000001
 
 const CIRCLES: Circle[] = [
     // {
-    //     radius: 1,
-    //     velocity: { x: 0, y: 0 },
-    //     color: [255, 255, 255],
-    //     position: { x: 0, y: 0 },
+    //     radius: 10,
+    //     velocity: { x: 20, y: 0 },
+    //     color: [0, 0, 0],
+    //     position: { x: 0, y: 10 }, //FIXME for webgpu
     // },
 ]
 
-for (let i = 0; i < 100; i++) {
+for (let i = 0; i < MAX_CIRCLE_COUNT; i++) {
     CIRCLES.push({
         radius: 10,
         velocity: { x: 20, y: 0 },
         color: [0, 0, 0],
-        position: { x: 50, y: 80 + i },
+        position: { x: 50, y: 30 + 30 * i },
     })
 }
 
@@ -135,14 +137,46 @@ let prevTime = 0
 export const run2d = (w: number, h: number) => {
     const { context, height, width } = setup2dContext(h, w)
     if (!context) {
+        alert('Failed to initialize 2d context')
         throw new Error('Failed to initialize 2d context')
     }
 
     const getNextFrame = (time: number) => {
-        console.log(`${(1000 / (time - prevTime)).toFixed(0)}fps`)
+        // console.log(`${(1000 / (time - prevTime)).toFixed(0)}fps`)
         prevTime = time
         tick(CIRCLES, width, height)
         render2d(CIRCLES, context) //rendering takes like 99% of the frame time :D
+        requestAnimationFrame(getNextFrame)
+    }
+
+    requestAnimationFrame(getNextFrame)
+}
+
+export const runWebGPU = async (w: number, h: number) => {
+    const setupData = await setupWebGPUContext(h, w)
+
+    if (!setupData) {
+        alert('failed to initialize webgpu')
+        throw new Error('failed to initialize webgpu')
+        return
+    }
+
+    const { pipeline, buffer, bindGroup, device, context, height, width } =
+        setupData
+
+    const getNextFrame = (time: number) => {
+        prevTime = time
+        tick(CIRCLES, width, height)
+        renderWebGPU(
+            CIRCLES,
+            device,
+            context,
+            pipeline,
+            bindGroup,
+            buffer,
+            width,
+            height
+        )
         requestAnimationFrame(getNextFrame)
     }
 

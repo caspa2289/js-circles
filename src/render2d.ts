@@ -8,7 +8,7 @@ export const setup2dContext = (height: number, width: number) => {
     canvas.width = realWidth
     canvas.height = realHeight
 
-    document.body.replaceChildren(canvas)
+    document.getElementById('container')?.replaceChildren(canvas)
 
     return {
         context: canvas.getContext('2d'),

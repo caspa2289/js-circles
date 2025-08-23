@@ -14,7 +14,8 @@
                 overflow: hidden;
             }
 
-            .canvas_2d {
+            .canvas_2d,
+            .canvas_webgpu {
                 height: 100%;
                 width: 100%;
 
@@ -22,5 +23,11 @@
             }
         </style>
     </head>
-    <body></body>
+    <body>
+        <!-- <select id="selector" style="position: fixed">
+            <option value="2d">canvas 2d api</option>
+            <option value="webgpu">webgpu</option>
+        </select> -->
+        <div id="container"></div>
+    </body>
 </html>
