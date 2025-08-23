@@ -172,16 +172,16 @@ export const renderWebGPU = (
     width: number,
     height: number
 ) => {
+    const startTime = performance.now()
+
     const circlePositions = new Float32Array(
         circles.reduce((res, circle) => {
-            // console.log(circle.position)
+            //webgpu screenspace is -1 to 1
+            //FIXME: do it in the shader, pass values via uniform buffer. Or don`t.
             const screenSpaceX = (circle.position.x / width) * 2 - 1
             const screenSpaceY = (circle.position.y / height) * -2 + 1
-            // console.log(width)
-            // console.log(height)
-            // console.log(screenSpaceX)
-            // console.log(screenSpaceY)
-            return [...res, screenSpaceX, screenSpaceY] //FIXME: gotta normalize this shit to screen space
+
+            return [...res, screenSpaceX, screenSpaceY]
         }, [] as number[])
     )
 
@@ -219,4 +219,6 @@ export const renderWebGPU = (
     renderPass.end()
 
     device.queue.submit([encoder.finish()])
+
+    return performance.now() - startTime
 }

@@ -48,6 +48,8 @@ export const tick = (
     maxWidth: number,
     maxHeight: number
 ) => {
+    const startTime = performance.now()
+
     circles.forEach((circle) => {
         circle.velocity.y += GRAVITY_CONST / PHYSICS_ITERATIONS_COUNT
         circle.position.x += circle.velocity.x / PHYSICS_ITERATIONS_COUNT
@@ -113,4 +115,6 @@ export const tick = (
             }
         }
     })
+
+    return performance.now() - startTime
 }

@@ -11,6 +11,7 @@ const width = Math.floor(document.body.clientWidth)
 const height = Math.floor(document.body.clientHeight)
 
 let prevTime = 0
+
 let is2dEnabled = false
 let isWebGPUEnabled = false
 
@@ -39,9 +40,11 @@ const runWebGPU = async (w: number, h: number, circles: Circle[]) => {
         setupData
 
     const getNextFrame = (time: number) => {
-        prevTime = time
-        tick(circles, width, height)
-        renderWebGPU(
+        if (!isWebGPUEnabled) return
+
+        const physicsTime = tick(circles, width, height)
+
+        const renderingTime = renderWebGPU(
             circles,
             device,
             context,
@@ -51,9 +54,10 @@ const runWebGPU = async (w: number, h: number, circles: Circle[]) => {
             width,
             height
         )
-        if (isWebGPUEnabled) {
-            requestAnimationFrame(getNextFrame)
-        }
+
+        updateFPSCounter(physicsTime, renderingTime)
+
+        requestAnimationFrame(getNextFrame)
     }
 
     requestAnimationFrame(getNextFrame)
@@ -67,12 +71,14 @@ const run2d = (w: number, h: number, circles: Circle[]) => {
     }
 
     const getNextFrame = (time: number) => {
-        prevTime = time
+        if (!is2dEnabled) return
+
         tick(circles, width, height)
         render2d(circles, context) //rendering takes like 99% of the frame time :D
-        if (is2dEnabled) {
-            requestAnimationFrame(getNextFrame)
-        }
+
+        updateFPSCounter(0, 0)
+
+        requestAnimationFrame(getNextFrame)
     }
 
     requestAnimationFrame(getNextFrame)
@@ -98,6 +104,12 @@ selector.addEventListener('change', (event) => {
 
 const resetButton = document.getElementById('resetButton') as HTMLButtonElement
 resetButton.addEventListener('click', initValues)
+
+const fpsCounter = document.getElementById('fpsCounter') as HTMLDivElement
+
+const updateFPSCounter = (physicsTime: number, renderingTime: number) => {
+    fpsCounter.textContent = `~ ${(1000 / (physicsTime + renderingTime)).toFixed(0)}FPS, Physics: ${physicsTime.toFixed(1)}ms, Rendering: ${renderingTime.toFixed(1)}ms`
+}
 
 isWebGPUEnabled = true
 initValues()
