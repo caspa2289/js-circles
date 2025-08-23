@@ -19,15 +19,28 @@
                 height: 100%;
                 width: 100%;
 
-                /* background-color: red; */
+                background-color: rgb(128, 128, 128);
+            }
+
+            .controls {
+                padding: 8px;
+                position: fixed;
+                display: flex;
+                gap: 8px;
             }
         </style>
     </head>
     <body>
-        <!-- <select id="selector" style="position: fixed">
-            <option value="2d">canvas 2d api</option>
-            <option value="webgpu">webgpu</option>
-        </select> -->
+        <div class="controls">
+            <label>
+                Rendering backend:
+                <select id="selector">
+                    <option value="2d">canvas 2d api</option>
+                    <option value="webgpu" selected>webgpu</option>
+                </select>
+            </label>
+            <button id="resetButton">Reset state</button>
+        </div>
         <div id="container"></div>
     </body>
 </html>
