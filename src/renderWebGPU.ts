@@ -19,7 +19,8 @@ fn vertex_main(
 @builtin(instance_index) InstanceIndex : u32,
 ) -> VertexOutput {
 
-    let scaleBall:f32 = 0.02; 
+    // let scaleBall:f32 = 0.0215;
+    let scaleBall:f32 = 0.0215 / 2; 
     let a:f32 = 1.0 * scaleBall;
     let b:f32 = 0.71 * scaleBall;  
     let c:f32 = 0.923 * scaleBall;  

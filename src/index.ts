@@ -15,20 +15,75 @@ let prevTime = 0
 let is2dEnabled = false
 let isWebGPUEnabled = false
 
-const CIRCLES: Circle[] = []
+let CIRCLES: Circle[] = []
 
-const initValues = () => {
-    for (let i = 0; i < MAX_CIRCLE_COUNT; i++) {
-        CIRCLES[i] = {
-            radius: 10,
-            velocity: { x: 20, y: 0 },
-            color: [255, 0, 0],
-            position: { x: 50, y: 30 + 30 * i },
-        }
+// const initValues = () => {
+//     CIRCLES = []
+//     // for (let i = 0; i < MAX_CIRCLE_COUNT; i++) {
+//     //     CIRCLES[i] = {
+//     //         radius: 10,
+//     //         velocity: { x: 20, y: 0 },
+//     //         color: [255, 0, 0],
+//     //         position: { x: 50, y: 30 + 30 * i },
+//     //     }
+//     // }
+// }
+
+const onFrameEnd = (frameCount: number) => {
+    if (CIRCLES.length >= MAX_CIRCLE_COUNT) return
+
+    if (frameCount % 5 !== 0) return
+
+    CIRCLES.push({
+        radius: 5,
+        velocity: { x: 15, y: 0 },
+        color: [255, 0, 0],
+        position: { x: 20, y: 20 },
+    })
+
+    CIRCLES.push({
+        radius: 5,
+        velocity: { x: 15, y: 0 },
+        color: [255, 0, 0],
+        position: { x: 20, y: 60 },
+    })
+
+    CIRCLES.push({
+        radius: 5,
+        velocity: { x: -15, y: 0 },
+        color: [255, 0, 0],
+        position: { x: width * window.devicePixelRatio - 20, y: 20 },
+    })
+
+    CIRCLES.push({
+        radius: 5,
+        velocity: { x: -15, y: 0 },
+        color: [255, 0, 0],
+        position: { x: width * window.devicePixelRatio - 20, y: 60 },
+    })
+}
+
+const addCircles = () => {
+    CIRCLES.push({
+        radius: 10,
+        velocity: { x: 30, y: 0 },
+        color: [255, 0, 0],
+        position: { x: 20, y: 20 },
+    })
+
+    if (CIRCLES.length < MAX_CIRCLE_COUNT) {
+        setTimeout(addCircles, 250) //FIXME: the timeouts are too inconsistent, gotta count frames
     }
 }
 
-const runWebGPU = async (w: number, h: number, circles: Circle[]) => {
+let frameCount = 0
+
+const runWebGPU = async (
+    w: number,
+    h: number,
+    circles: Circle[],
+    callback: (frame: number) => void
+) => {
     const setupData = await setupWebGPUContext(h, w)
 
     if (!setupData) {
@@ -41,6 +96,8 @@ const runWebGPU = async (w: number, h: number, circles: Circle[]) => {
 
     const getNextFrame = (time: number) => {
         if (!isWebGPUEnabled) return
+
+        frameCount++
 
         const physicsTime = tick(circles, width, height)
 
@@ -55,6 +112,8 @@ const runWebGPU = async (w: number, h: number, circles: Circle[]) => {
             height
         )
 
+        callback(frameCount)
+
         updateFPSCounter(physicsTime, renderingTime)
 
         requestAnimationFrame(getNextFrame)
@@ -63,7 +122,12 @@ const runWebGPU = async (w: number, h: number, circles: Circle[]) => {
     requestAnimationFrame(getNextFrame)
 }
 
-const run2d = (w: number, h: number, circles: Circle[]) => {
+const run2d = (
+    w: number,
+    h: number,
+    circles: Circle[],
+    callback: (frame: number) => void
+) => {
     const { context, height, width } = setup2dContext(h, w)
     if (!context) {
         alert('Failed to initialize 2d context')
@@ -73,8 +137,12 @@ const run2d = (w: number, h: number, circles: Circle[]) => {
     const getNextFrame = (time: number) => {
         if (!is2dEnabled) return
 
+        frameCount++
+
         tick(circles, width, height)
         render2d(circles, context) //rendering takes like 99% of the frame time :D
+
+        callback(frameCount)
 
         updateFPSCounter(0, 0)
 
@@ -90,20 +158,22 @@ selector.addEventListener('change', (event) => {
         case '2d': {
             is2dEnabled = true
             isWebGPUEnabled = false
-            run2d(width, height, CIRCLES)
+            run2d(width, height, CIRCLES, onFrameEnd)
             break
         }
         case 'webgpu': {
             is2dEnabled = false
             isWebGPUEnabled = true
-            runWebGPU(width, height, CIRCLES)
+            runWebGPU(width, height, CIRCLES, onFrameEnd)
             break
         }
     }
 })
 
 const resetButton = document.getElementById('resetButton') as HTMLButtonElement
-resetButton.addEventListener('click', initValues)
+resetButton.addEventListener('click', () => {
+    CIRCLES = []
+})
 
 const fpsCounter = document.getElementById('fpsCounter') as HTMLDivElement
 
@@ -112,5 +182,5 @@ const updateFPSCounter = (physicsTime: number, renderingTime: number) => {
 }
 
 isWebGPUEnabled = true
-initValues()
-runWebGPU(width, height, CIRCLES)
+runWebGPU(width, height, CIRCLES, onFrameEnd)
+// addCircles()
