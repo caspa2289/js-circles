@@ -174,16 +174,22 @@ export const renderWebGPU = (
 ) => {
     const startTime = performance.now()
 
-    const circlePositions = new Float32Array(
-        circles.reduce((res, circle) => {
-            //webgpu screenspace is -1 to 1
-            //FIXME: do it in the shader, pass values via uniform buffer. Or don`t.
-            const screenSpaceX = (circle.position.x / width) * 2 - 1
-            const screenSpaceY = (circle.position.y / height) * -2 + 1
+    // const circleData = circles.reduce((res, circle) => {
+    //     const screenSpaceX = (circle.position.x / width) * 2 - 1
+    //     const screenSpaceY = (circle.position.y / height) * -2 + 1
 
-            return [...res, screenSpaceX, screenSpaceY]
-        }, [] as number[])
-    )
+    //     return [...res, screenSpaceX, screenSpaceY]
+    // }, [] as number[])
+
+    const circleData: number[] = []
+    //this works in 0.5ms< while the reduce one takes >50ms at 1500 elements :o
+    //i wonder if babel takes care of that under the hood. It sure should.
+    for (let i = 0; i < circles.length; i++) {
+        //webgpu screenspace is -1 to 1
+        //FIXME: do it in the shader, pass values via uniform buffer. Or don`t.
+        circleData.push((circles[i].position.x / width) * 2 - 1)
+        circleData.push((circles[i].position.y / height) * -2 + 1)
+    }
 
     const uploadBuffer = device.createBuffer({
         label: 'particle buffer',
@@ -192,7 +198,7 @@ export const renderWebGPU = (
         mappedAtCreation: true,
     })
 
-    new Float32Array(uploadBuffer.getMappedRange()).set(circlePositions)
+    new Float32Array(uploadBuffer.getMappedRange()).set(circleData)
     uploadBuffer.unmap()
 
     const encoder = device.createCommandEncoder({
