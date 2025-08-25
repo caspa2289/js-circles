@@ -15,6 +15,7 @@
         "@typescript-eslint/eslint-plugin": "6.20.0",
         "@typescript-eslint/parser": "6.20.0",
         "@webgpu/types": "0.1.64",
+        "copy-webpack-plugin": "13.0.1",
         "eslint": "8.56.0",
         "eslint-webpack-plugin": "4.0.1",
         "html-webpack-plugin": "5.6.0",

@@ -9,6 +9,7 @@ const CIRCLES: Circle[] = []
 
 for (let i = 0; i < MAX_CIRCLE_COUNT; i++) {
     CIRCLES.push({
+        index: i,
         radius: 1,
         velocity: { x: 0, y: 0 },
         color: [255, 255, 255],

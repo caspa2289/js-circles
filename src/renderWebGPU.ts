@@ -21,7 +21,7 @@ fn vertex_main(
 ) -> VertexOutput {
 
     // let scaleBall:f32 = 0.0215;
-    let scaleBall:f32 = 0.0215 * 0.35;
+    let scaleBall:f32 = 0.0215 * 0.65;
     let a:f32 = 1.0 * scaleBall;
     let b:f32 = 0.71 * scaleBall;
     let c:f32 = 0.923 * scaleBall;

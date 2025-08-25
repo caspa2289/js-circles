@@ -1,32 +1,33 @@
 // import { runPerformanceTest } from './performanceTests'
 import { MAX_CIRCLE_COUNT } from './constants'
+import { getImageData } from './image'
 import { tick } from './physics'
 import { render2d, setup2dContext } from './render2d'
 import { renderWebGPU, setupWebGPUContext } from './renderWebGPU'
 import { Circle } from './types'
 
 // runPerformanceTest()
-
-const width = 700
-const height = 700
+const width = 400
+const height = 400
 
 let prevTime = 0
 
 let is2dEnabled = false
 let isWebGPUEnabled = false
 
+let colorData: number[] = []
 let CIRCLES: Circle[] = []
 
 const radius = 3
 
 const xFactors = [
-    -radius * 6,
-    -radius * 4,
-    -radius * 2,
+    -radius * 55,
+    -radius * 30,
+    -radius * 20,
     0,
-    radius * 2,
-    radius * 4,
-    radius * 6,
+    radius * 55,
+    radius * 30,
+    radius * 20,
 ]
 
 const optimalGridSize = radius * 2.6755 //this is a magic number from practical tests
@@ -35,7 +36,8 @@ const gridDimension = Math.trunc(width / optimalGridSize)
 
 const onFrameEnd = (frameCount: number) => {
     if (CIRCLES.length + xFactors.length >= MAX_CIRCLE_COUNT) {
-        console.log('finished')
+        // console.log('finished')
+        // console.log(CIRCLES)
         return
     }
 
@@ -43,8 +45,9 @@ const onFrameEnd = (frameCount: number) => {
 
     xFactors.forEach((factor) => {
         CIRCLES.push({
+            index: CIRCLES.length,
             radius,
-            velocity: { x: factor / 1.5, y: 10 },
+            velocity: { x: 3, y: 10 },
             color: [255, 255, 0],
             position: {
                 x: width / 2 + factor,
@@ -52,19 +55,6 @@ const onFrameEnd = (frameCount: number) => {
             },
         })
     })
-}
-
-const addCircles = () => {
-    CIRCLES.push({
-        radius: 10,
-        velocity: { x: 30, y: 0 },
-        color: [255, 0, 0],
-        position: { x: 20, y: 20 },
-    })
-
-    if (CIRCLES.length < MAX_CIRCLE_COUNT) {
-        setTimeout(addCircles, 250) //FIXME: the timeouts are too inconsistent, gotta count frames
-    }
 }
 
 let frameCount = 0
@@ -167,5 +157,10 @@ const updateFPSCounter = (physicsTime: number, renderingTime: number) => {
 }
 
 isWebGPUEnabled = true
-runWebGPU(width, height, CIRCLES, onFrameEnd)
+getImageData().then((data) => {
+    colorData = [...data]
+
+    console.log(colorData)
+    runWebGPU(width, height, CIRCLES, onFrameEnd)
+})
 // addCircles()
