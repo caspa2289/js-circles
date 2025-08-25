@@ -3,7 +3,8 @@ import { Circle } from './types'
 
 const circleShader = `
 struct Particle {
-    pos : vec2<f32>,
+    pos: vec2<f32>,
+    color: vec3<f32>
 }
 
 @group(0) @binding(0) var<storage, read> data: array<Particle>;
@@ -60,7 +61,7 @@ fn vertex_main(
     let xy = pos[VertexIndex] + positionInstance;
 
     output.Position = vec4<f32>(xy, 0.0, 1.0);
-    output.color = vec3(100.0, 0.0, 0.0);
+    output.color = data[InstanceIndex].color;
     return output;
 }
 
@@ -69,10 +70,6 @@ fn vertex_main(
     return vec4<f32>(color,1.0);
 }
 `
-
-const alignTo = (val: number, align: number) => {
-    return Math.floor((val + align - 1) / align) * align
-}
 
 export const setupWebGPUContext = async (height: number, width: number) => {
     const canvas = document.createElement('canvas')
@@ -137,7 +134,7 @@ export const setupWebGPUContext = async (height: number, width: number) => {
 
     const buffer = device.createBuffer({
         label: 'particle buffer',
-        size: alignTo(BUFFER_BYTE_SIZE * MAX_CIRCLE_COUNT, 4),
+        size: BUFFER_BYTE_SIZE * MAX_CIRCLE_COUNT,
         usage:
             GPUBufferUsage.STORAGE |
             GPUBufferUsage.COPY_DST |
@@ -184,13 +181,17 @@ export const renderWebGPU = (
     for (let i = 0; i < circles.length; i++) {
         //webgpu screenspace is -1 to 1
         //FIXME: do it in the shader, pass values via uniform buffer. Or don`t.
-        circleData.push((circles[i].position.x / width) * 2 - 1)
-        circleData.push((circles[i].position.y / height) * -2 + 1)
+        //this takes byte layout into account
+        circleData[i * 8] = (circles[i].position.x / width) * 2 - 1
+        circleData[i * 8 + 1] = (circles[i].position.y / height) * -2 + 1
+        circleData[i * 8 + 4] = circles[i].color[0]
+        circleData[i * 8 + 5] = circles[i].color[1]
+        circleData[i * 8 + 6] = circles[i].color[2]
     }
 
     const uploadBuffer = device.createBuffer({
         label: 'particle buffer',
-        size: alignTo(BUFFER_BYTE_SIZE * MAX_CIRCLE_COUNT, 4),
+        size: BUFFER_BYTE_SIZE * MAX_CIRCLE_COUNT,
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
         mappedAtCreation: true,
     })

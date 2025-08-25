@@ -45,7 +45,7 @@ const onFrameEnd = (frameCount: number) => {
         CIRCLES.push({
             radius,
             velocity: { x: factor / 1.5, y: 10 },
-            color: [255, 0, 0],
+            color: [255, 255, 0],
             position: {
                 x: width / 2 + factor,
                 y: radius * 2,
