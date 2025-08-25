@@ -3,17 +3,13 @@ import { Circle } from './types'
 export const setup2dContext = (height: number, width: number) => {
     const canvas = document.createElement('canvas')
     canvas.classList.add('canvas_2d')
-    const realHeight = height * window.devicePixelRatio
-    const realWidth = width * window.devicePixelRatio
-    canvas.width = realWidth
-    canvas.height = realHeight
+    canvas.width = width
+    canvas.height = height
 
     document.getElementById('container')?.replaceChildren(canvas)
 
     return {
         context: canvas.getContext('2d'),
-        width: realWidth,
-        height: realHeight,
     }
 }
 

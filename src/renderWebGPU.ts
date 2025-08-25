@@ -20,11 +20,11 @@ fn vertex_main(
 ) -> VertexOutput {
 
     // let scaleBall:f32 = 0.0215;
-    let scaleBall:f32 = 0.0215 / 2; 
+    let scaleBall:f32 = 0.0215 * 0.35;
     let a:f32 = 1.0 * scaleBall;
-    let b:f32 = 0.71 * scaleBall;  
-    let c:f32 = 0.923 * scaleBall;  
-    let d:f32 = 0.382 * scaleBall;  
+    let b:f32 = 0.71 * scaleBall;
+    let c:f32 = 0.923 * scaleBall;
+    let d:f32 = 0.382 * scaleBall;
 
     var pos = array<vec2<f32>, 6*4*2>(
         vec2( 0.0,  0.0), vec2( a, 0.0), vec2(c, d),
@@ -77,10 +77,8 @@ const alignTo = (val: number, align: number) => {
 export const setupWebGPUContext = async (height: number, width: number) => {
     const canvas = document.createElement('canvas')
     canvas.classList.add('canvas_webgpu')
-    const realHeight = height * window.devicePixelRatio
-    const realWidth = width * window.devicePixelRatio
-    canvas.width = realWidth
-    canvas.height = realHeight
+    canvas.width = width
+    canvas.height = height
 
     document.getElementById('container')?.replaceChildren(canvas)
 
@@ -158,8 +156,6 @@ export const setupWebGPUContext = async (height: number, width: number) => {
         bindGroup,
         device,
         context,
-        height: realHeight,
-        width: realWidth,
     }
 }
 

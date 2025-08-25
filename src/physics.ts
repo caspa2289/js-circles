@@ -1,7 +1,6 @@
 import {
     CIRCLE_BOUNCINESS,
     GRAVITY_CONST,
-    GRID_DIMENSION,
     PHYSICS_ITERATIONS_COUNT,
 } from './constants'
 import { Circle } from './types'
@@ -44,9 +43,14 @@ const handleWallCollisions = (
     }
 }
 
-const getSpatialGrid = (circles: Circle[], width: number, height: number) => {
-    const cellHeight = height / GRID_DIMENSION
-    const cellWidth = width / GRID_DIMENSION
+const getSpatialGrid = (
+    circles: Circle[],
+    width: number,
+    height: number,
+    gridDimension: number
+) => {
+    const cellHeight = height / gridDimension
+    const cellWidth = width / gridDimension
     const grid: {
         x: number
         y: number
@@ -56,93 +60,93 @@ const getSpatialGrid = (circles: Circle[], width: number, height: number) => {
         relevantCells: number[]
     }[] = []
 
-    for (let i = 0; i < GRID_DIMENSION; i++) {
-        for (let x = 0; x < GRID_DIMENSION; x++) {
+    for (let i = 0; i < gridDimension; i++) {
+        for (let x = 0; x < gridDimension; x++) {
             let relevantCells: number[] = []
 
-            const cellIndex = i * GRID_DIMENSION + x
+            const cellIndex = i * gridDimension + x
 
-            if (cellIndex % GRID_DIMENSION === 0) {
+            if (cellIndex % gridDimension === 0) {
                 //cell is first in a row
                 if (cellIndex === 0) {
                     //cell is first in first row
-                    relevantCells = [1, GRID_DIMENSION, GRID_DIMENSION + 1]
+                    relevantCells = [1, gridDimension, gridDimension + 1]
                 } else if (
                     //cell is first in last row
-                    cellIndex + GRID_DIMENSION ===
-                    GRID_DIMENSION * GRID_DIMENSION
+                    cellIndex + gridDimension ===
+                    gridDimension * gridDimension
                 ) {
                     relevantCells = [
-                        cellIndex - GRID_DIMENSION,
-                        cellIndex - GRID_DIMENSION + 1,
+                        cellIndex - gridDimension,
+                        cellIndex - gridDimension + 1,
                         cellIndex + 1,
                     ]
                 } else {
                     relevantCells = [
-                        cellIndex - GRID_DIMENSION,
-                        cellIndex - GRID_DIMENSION + 1,
+                        cellIndex - gridDimension,
+                        cellIndex - gridDimension + 1,
                         cellIndex + 1,
-                        cellIndex + GRID_DIMENSION,
-                        cellIndex + GRID_DIMENSION + 1,
+                        cellIndex + gridDimension,
+                        cellIndex + gridDimension + 1,
                     ]
                 }
-            } else if ((cellIndex + 1) % GRID_DIMENSION === 0) {
+            } else if ((cellIndex + 1) % gridDimension === 0) {
                 //cell is last in a row
-                if (cellIndex === GRID_DIMENSION - 1) {
+                if (cellIndex === gridDimension - 1) {
                     //cell is last in first row
                     relevantCells = [
-                        GRID_DIMENSION - 2,
-                        GRID_DIMENSION * 2 - 2,
-                        GRID_DIMENSION * 2 - 1,
+                        gridDimension - 2,
+                        gridDimension * 2 - 2,
+                        gridDimension * 2 - 1,
                     ]
-                } else if (cellIndex === GRID_DIMENSION * GRID_DIMENSION - 1) {
+                } else if (cellIndex === gridDimension * gridDimension - 1) {
                     //cell is last in last row
                     relevantCells = [
-                        cellIndex - GRID_DIMENSION - 1,
-                        cellIndex - GRID_DIMENSION,
+                        cellIndex - gridDimension - 1,
+                        cellIndex - gridDimension,
                         cellIndex - 1,
                     ]
                 } else {
                     relevantCells = [
-                        cellIndex - GRID_DIMENSION - 1,
-                        cellIndex - GRID_DIMENSION,
+                        cellIndex - gridDimension - 1,
+                        cellIndex - gridDimension,
                         cellIndex - 1,
-                        cellIndex + GRID_DIMENSION - 1,
-                        cellIndex + GRID_DIMENSION,
+                        cellIndex + gridDimension - 1,
+                        cellIndex + gridDimension,
                     ]
                 }
-            } else if (cellIndex - GRID_DIMENSION < 0) {
+            } else if (cellIndex - gridDimension < 0) {
                 //cell is in first row
                 relevantCells = [
                     cellIndex - 1,
                     cellIndex + 1,
-                    cellIndex + GRID_DIMENSION - 1,
-                    cellIndex + GRID_DIMENSION,
-                    cellIndex + GRID_DIMENSION + 1,
+                    cellIndex + gridDimension - 1,
+                    cellIndex + gridDimension,
+                    cellIndex + gridDimension + 1,
                 ]
             } else if (
-                cellIndex + GRID_DIMENSION >=
-                GRID_DIMENSION * GRID_DIMENSION
+                cellIndex + gridDimension >=
+                gridDimension * gridDimension
             ) {
                 //cell is in last row
                 relevantCells = [
-                    cellIndex - GRID_DIMENSION - 1,
-                    cellIndex - GRID_DIMENSION,
-                    cellIndex - GRID_DIMENSION + 1,
+                    cellIndex - gridDimension - 1,
+                    cellIndex - gridDimension,
+                    cellIndex - gridDimension + 1,
                     cellIndex - 1,
                     cellIndex + 1,
                 ]
             } else {
                 //cell is not on any of the edges
                 relevantCells = [
-                    cellIndex - GRID_DIMENSION - 1,
-                    cellIndex - GRID_DIMENSION,
-                    cellIndex - GRID_DIMENSION + 1,
+                    cellIndex - gridDimension - 1,
+                    cellIndex - gridDimension,
+                    cellIndex - gridDimension + 1,
                     cellIndex - 1,
                     cellIndex + 1,
-                    cellIndex + GRID_DIMENSION - 1,
-                    cellIndex + GRID_DIMENSION,
-                    cellIndex + GRID_DIMENSION + 1,
+                    cellIndex + gridDimension - 1,
+                    cellIndex + gridDimension,
+                    cellIndex + gridDimension + 1,
                 ]
             }
 
@@ -165,7 +169,7 @@ const getSpatialGrid = (circles: Circle[], width: number, height: number) => {
         // gridY = gridY >= GRID_DIMENSION ? GRID_DIMENSION - 1 : gridY
         // gridX = gridX >= GRID_DIMENSION ? GRID_DIMENSION - 1 : gridX
 
-        const gridCellIndex = gridY * GRID_DIMENSION + gridX
+        const gridCellIndex = gridY * gridDimension + gridX
         grid[gridCellIndex].items.push(circles[i])
     }
 
@@ -238,7 +242,8 @@ const determineCollision = (circle: Circle, otherCircle: Circle) => {
 export const tick = (
     circles: Circle[],
     maxWidth: number,
-    maxHeight: number
+    maxHeight: number,
+    gridDimension: number
 ) => {
     const startTime = performance.now()
 
@@ -251,7 +256,7 @@ export const tick = (
             handleWallCollisions(circle, maxWidth, maxHeight)
         })
 
-        const grid = getSpatialGrid(circles, maxWidth, maxHeight)
+        const grid = getSpatialGrid(circles, maxWidth, maxHeight, gridDimension)
 
         grid.forEach((cell) => {
             cell.items.forEach((circle, circleIndex) => {

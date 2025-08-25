@@ -8,9 +8,8 @@ export const POSITION_LENGTH = 2
 export const POSITION_OFFSET = VELOCITY_OFFSET + VELOCITY_LENGTH
 export const CIRCLE_LENGTH =
     RADIUS_LENGTH + COLOR_LENGTH + VELOCITY_LENGTH + POSITION_LENGTH
-export const MAX_CIRCLE_COUNT = 8000
-export const GRAVITY_CONST = 0.25
-export const PHYSICS_ITERATIONS_COUNT = 2
-export const CIRCLE_BOUNCINESS = 0.45
+export const MAX_CIRCLE_COUNT = 4000
+export const GRAVITY_CONST = 0.5
+export const PHYSICS_ITERATIONS_COUNT = 5
+export const CIRCLE_BOUNCINESS = 0.6
 export const BUFFER_BYTE_SIZE = Float32Array.BYTES_PER_ELEMENT * 2 // 2 for position for now
-export const GRID_DIMENSION = 60 //TODO: figure out a good way to determine that

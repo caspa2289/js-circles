@@ -7,8 +7,8 @@ import { Circle } from './types'
 
 // runPerformanceTest()
 
-const width = Math.floor(document.body.clientWidth)
-const height = Math.floor(document.body.clientHeight)
+const width = 700
+const height = 700
 
 let prevTime = 0
 
@@ -17,49 +17,40 @@ let isWebGPUEnabled = false
 
 let CIRCLES: Circle[] = []
 
-// const initValues = () => {
-//     CIRCLES = []
-//     // for (let i = 0; i < MAX_CIRCLE_COUNT; i++) {
-//     //     CIRCLES[i] = {
-//     //         radius: 10,
-//     //         velocity: { x: 20, y: 0 },
-//     //         color: [255, 0, 0],
-//     //         position: { x: 50, y: 30 + 30 * i },
-//     //     }
-//     // }
-// }
+const radius = 3
+
+const xFactors = [
+    -radius * 6,
+    -radius * 4,
+    -radius * 2,
+    0,
+    radius * 2,
+    radius * 4,
+    radius * 6,
+]
+
+const optimalGridSize = radius * 2.6755 //this is a magic number from practical tests
+
+const gridDimension = Math.trunc(width / optimalGridSize)
 
 const onFrameEnd = (frameCount: number) => {
-    if (CIRCLES.length >= MAX_CIRCLE_COUNT) return
+    if (CIRCLES.length + xFactors.length >= MAX_CIRCLE_COUNT) {
+        console.log('finished')
+        return
+    }
 
-    if (frameCount % 5 !== 0) return
+    if (frameCount % 3 !== 0) return
 
-    CIRCLES.push({
-        radius: 5,
-        velocity: { x: 15, y: 0 },
-        color: [255, 0, 0],
-        position: { x: 20, y: 20 },
-    })
-
-    CIRCLES.push({
-        radius: 5,
-        velocity: { x: 15, y: 0 },
-        color: [255, 0, 0],
-        position: { x: 20, y: 60 },
-    })
-
-    CIRCLES.push({
-        radius: 5,
-        velocity: { x: -15, y: 0 },
-        color: [255, 0, 0],
-        position: { x: width * window.devicePixelRatio - 20, y: 20 },
-    })
-
-    CIRCLES.push({
-        radius: 5,
-        velocity: { x: -15, y: 0 },
-        color: [255, 0, 0],
-        position: { x: width * window.devicePixelRatio - 20, y: 60 },
+    xFactors.forEach((factor) => {
+        CIRCLES.push({
+            radius,
+            velocity: { x: factor / 1.5, y: 10 },
+            color: [255, 0, 0],
+            position: {
+                x: width / 2 + factor,
+                y: radius * 2,
+            },
+        })
     })
 }
 
@@ -91,15 +82,14 @@ const runWebGPU = async (
         throw new Error('failed to initialize webgpu')
     }
 
-    const { pipeline, buffer, bindGroup, device, context, height, width } =
-        setupData
+    const { pipeline, buffer, bindGroup, device, context } = setupData
 
     const getNextFrame = (time: number) => {
         if (!isWebGPUEnabled) return
 
         frameCount++
 
-        const physicsTime = tick(circles, width, height)
+        const physicsTime = tick(circles, width, height, gridDimension)
 
         const renderingTime = renderWebGPU(
             circles,
@@ -128,7 +118,7 @@ const run2d = (
     circles: Circle[],
     callback: (frame: number) => void
 ) => {
-    const { context, height, width } = setup2dContext(h, w)
+    const { context } = setup2dContext(h, w)
     if (!context) {
         alert('Failed to initialize 2d context')
         throw new Error('Failed to initialize 2d context')
@@ -139,12 +129,12 @@ const run2d = (
 
         frameCount++
 
-        tick(circles, width, height)
+        const physicsTime = tick(circles, width, height, gridDimension)
         render2d(circles, context) //rendering takes like 99% of the frame time :D
 
         callback(frameCount)
 
-        updateFPSCounter(0, 0)
+        updateFPSCounter(physicsTime, 0)
 
         requestAnimationFrame(getNextFrame)
     }
@@ -168,11 +158,6 @@ selector.addEventListener('change', (event) => {
             break
         }
     }
-})
-
-const resetButton = document.getElementById('resetButton') as HTMLButtonElement
-resetButton.addEventListener('click', () => {
-    CIRCLES = []
 })
 
 const fpsCounter = document.getElementById('fpsCounter') as HTMLDivElement
