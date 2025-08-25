@@ -17,27 +17,68 @@ const handleWallXCollision = (circle: Circle) => {
     circle.velocity.y *= CIRCLE_BOUNCINESS
 }
 
+const determineBoxCollisions = (
+    circle: Circle,
+    maxWidth: number,
+    maxHeight: number,
+    minWidth: number,
+    minHeight: number
+) => {
+    const result: { x: boolean; y: boolean; x1: boolean; y1: boolean } = {
+        x: false,
+        y: false,
+        x1: false,
+        y1: false,
+    }
+
+    if (circle.position.y + circle.radius >= maxHeight) {
+        result.y1 = true
+    }
+
+    if (circle.position.y - circle.radius <= minHeight) {
+        result.y = true
+    }
+
+    if (circle.position.x + circle.radius >= maxWidth) {
+        result.x1 = true
+    }
+
+    if (circle.position.x - circle.radius <= minWidth) {
+        result.x = true
+    }
+
+    return result
+}
+
 const handleWallCollisions = (
     circle: Circle,
     maxWidth: number,
     maxHeight: number
 ) => {
-    if (circle.position.y + circle.radius >= maxHeight) {
+    const { x, y, x1, y1 } = determineBoxCollisions(
+        circle,
+        maxWidth,
+        maxHeight,
+        0,
+        0
+    )
+
+    if (y1) {
         circle.position.y = maxHeight - (circle.radius + TINY_OFFSET)
         handleWallYCollision(circle)
     }
 
-    if (circle.position.y - circle.radius <= 0) {
+    if (y) {
         circle.position.y = TINY_OFFSET + circle.radius
         handleWallYCollision(circle)
     }
 
-    if (circle.position.x + circle.radius >= maxWidth) {
+    if (x1) {
         circle.position.x = maxWidth - (circle.radius + TINY_OFFSET)
         handleWallXCollision(circle)
     }
 
-    if (circle.position.x - circle.radius <= 0) {
+    if (x) {
         circle.position.x = TINY_OFFSET + circle.radius
         handleWallXCollision(circle)
     }
@@ -291,8 +332,24 @@ export const tick = (
                             collisionData.dy
                         )
                     }
+                }
 
-                    //TODO: this could be skipped if circle is fully contained inside of cell
+                const {
+                    x: xCollision,
+                    y: yCollision,
+                    x1: x1Collision,
+                    y1: y1Collision,
+                } = determineBoxCollisions(
+                    circle,
+                    cell.x,
+                    cell.y,
+                    cell.x1,
+                    cell.y1
+                )
+
+                //skip adjacent cells check if circle is fully contined within own cell
+                //in best case gets a 20% speed up, worst case - nothing
+                if (xCollision || yCollision || x1Collision || y1Collision) {
                     for (let v = 0; v < cell.relevantCells.length; v++) {
                         const relevantCell = grid[cell.relevantCells[v]]
                         for (let z = 0; z < relevantCell.items.length; z++) {
