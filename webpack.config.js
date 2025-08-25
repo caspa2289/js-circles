@@ -26,14 +26,14 @@ module.exports = {
             patterns: [
                 {
                     from: path.resolve(__dirname, 'src/assets'),
-                    to: path.resolve(__dirname, 'dist/static'),
+                    to: path.resolve(__dirname, 'docs/static'),
                 },
             ],
         }),
     ],
     output: {
         filename: '[name].[contenthash].js',
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve(__dirname, 'docs'),
         clean: true,
         publicPath: '/',
     },

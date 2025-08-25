@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Template</title>
+        <!-- <script type="module" src="index.ts"></script> -->
+        <style>
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            .canvas_2d,
+            .canvas_webgpu {
+                height: 400px;
+                width: 400px;
+
+                background-color: rgb(128, 128, 128);
+            }
+
+            .controls {
+                padding: 8px;
+                position: fixed;
+                display: flex;
+                gap: 8px;
+            }
+        </style>
+        <script defer src="runtime.f349305e3c3467a54ca2.js"></script>
+        <script defer src="index.6a5eeeb4222fead8b2ca.js"></script>
+    </head>
+    <body>
+        <div class="controls">
+            <label>
+                Rendering backend:
+                <select id="selector">
+                    <option value="2d">canvas 2d api</option>
+                    <option value="webgpu" selected>webgpu</option>
+                </select>
+            </label>
+            <div id="fpsCounter"></div>
+        </div>
+        <div id="container"></div>
+    </body>
+</html>
