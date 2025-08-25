@@ -61,6 +61,8 @@ fn vertex_main(
     let xy = pos[VertexIndex] + positionInstance;
 
     output.Position = vec4<f32>(xy, 0.0, 1.0);
+    // output.color = pow(data[InstanceIndex].color, vec3f(2.2));
+    // output.color = normalize(data[InstanceIndex].color);
     output.color = data[InstanceIndex].color;
     return output;
 }
@@ -103,6 +105,7 @@ export const setupWebGPUContext = async (height: number, width: number) => {
     const format = 'rgba8unorm'
 
     context.configure({
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
         device,
         format,
     })

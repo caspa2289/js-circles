@@ -1,6 +1,8 @@
 // import { runPerformanceTest } from './performanceTests'
+// import { finalData } from './circlesAt2500'
+import { colors } from './colors'
 import { MAX_CIRCLE_COUNT } from './constants'
-import { getImageData } from './image'
+// import { getImageData } from './image'
 import { tick } from './physics'
 import { render2d, setup2dContext } from './render2d'
 import { renderWebGPU, setupWebGPUContext } from './renderWebGPU'
@@ -36,8 +38,10 @@ const gridDimension = Math.trunc(width / optimalGridSize)
 
 const onFrameEnd = (frameCount: number) => {
     if (CIRCLES.length + xFactors.length >= MAX_CIRCLE_COUNT) {
-        // console.log('finished')
-        // console.log(CIRCLES)
+        // if (frameCount === 2300) {
+        //     console.log(CIRCLES)
+        // }
+        // console.log(frameCount)
         return
     }
 
@@ -47,8 +51,9 @@ const onFrameEnd = (frameCount: number) => {
         CIRCLES.push({
             index: CIRCLES.length,
             radius,
-            velocity: { x: 3, y: 10 },
-            color: [255, 255, 0],
+            velocity: { x: factor / 10, y: 10 },
+            // color: [255, 255, 0],
+            color: colors[CIRCLES.length] as [number, number, number],
             position: {
                 x: width / 2 + factor,
                 y: radius * 2,
@@ -157,10 +162,24 @@ const updateFPSCounter = (physicsTime: number, renderingTime: number) => {
 }
 
 isWebGPUEnabled = true
-getImageData().then((data) => {
-    colorData = [...data]
+// getImageData().then((data) => {
+//     colorData = [...data]
 
-    console.log(colorData)
-    runWebGPU(width, height, CIRCLES, onFrameEnd)
-})
+//     const result = finalData.map((circle) => {
+//         const a = 63 / 400
+
+//         const newX = Math.round(circle.position.x * a)
+//         const newY = Math.round(circle.position.y * a)
+
+//         const index = newY * 63 + newX
+
+//         return [
+//             colorData[index * 4] / 255,
+//             colorData[index * 4 + 1] / 255,
+//             colorData[index * 4 + 2] / 255,
+//         ]
+//     })
+//     console.log(result)
+runWebGPU(width, height, CIRCLES, onFrameEnd)
+// })
 // addCircles()
