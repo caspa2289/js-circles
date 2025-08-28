@@ -1,8 +1,6 @@
 // import { runPerformanceTest } from './performanceTests'
-// import { finalData } from './circlesAt2500'
 import { colors } from './colors'
 import { MAX_CIRCLE_COUNT } from './constants'
-// import { getImageData } from './image'
 import { tick } from './physics'
 import { render2d, setup2dContext } from './render2d'
 import { renderWebGPU, setupWebGPUContext } from './renderWebGPU'
@@ -17,7 +15,7 @@ let prevTime = 0
 let is2dEnabled = false
 let isWebGPUEnabled = false
 
-let colorData: number[] = []
+// let colorData: number[] = []
 let CIRCLES: Circle[] = []
 
 const radius = 3
@@ -33,9 +31,10 @@ const radius = 3
 // ]
 
 const xFactors = [
-    -radius * 32 - 1,
-    -radius * 30 + 1,
-    -radius * 28 + 2,
+    radius * 32.1,
+    radius * 30,
+    radius * 27.9,
+    radius * 25.8,
     // 0,
     // radius * 35,
     // radius * 30,
@@ -47,7 +46,7 @@ const optimalGridSize = radius * 2.6755 //this is a magic number from practical 
 const gridDimension = Math.trunc(width / optimalGridSize)
 
 const onFrameEnd = (frameCount: number) => {
-    if (CIRCLES.length + xFactors.length >= MAX_CIRCLE_COUNT) {
+    if (CIRCLES.length + xFactors.length * 3 >= MAX_CIRCLE_COUNT) {
         // if (frameCount === 2300) {
         //     console.log(CIRCLES)
         // }
@@ -61,12 +60,35 @@ const onFrameEnd = (frameCount: number) => {
         CIRCLES.push({
             index: CIRCLES.length,
             radius,
-            velocity: { x: 15, y: 10 },
+            velocity: { x: 2, y: -5 },
             // color: [255, 255, 0],
             color: colors[CIRCLES.length] as [number, number, number],
             position: {
-                x: width / 2 + factor,
-                y: radius * 2,
+                x: 30,
+                y: factor,
+            },
+        })
+        CIRCLES.push({
+            index: CIRCLES.length,
+            radius,
+            velocity: { x: -2, y: -5 },
+            // color: [255, 255, 0],
+            color: colors[CIRCLES.length] as [number, number, number],
+            position: {
+                x: width - 30,
+                y: factor,
+            },
+        })
+
+        CIRCLES.push({
+            index: CIRCLES.length,
+            radius,
+            velocity: { x: 3, y: 3 },
+            // color: [255, 255, 0],
+            color: colors[CIRCLES.length] as [number, number, number],
+            position: {
+                x: width / 2 - radius,
+                y: factor,
             },
         })
     })
@@ -192,4 +214,3 @@ isWebGPUEnabled = true
 //     console.log(result)
 runWebGPU(width, height, CIRCLES, onFrameEnd)
 // })
-// addCircles()
