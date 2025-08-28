@@ -22,14 +22,24 @@ let CIRCLES: Circle[] = []
 
 const radius = 3
 
+// const xFactors = [
+//     -radius * 55,
+//     -radius * 30,
+//     -radius * 20,
+//     0,
+//     radius * 55,
+//     radius * 30,
+//     radius * 20,
+// ]
+
 const xFactors = [
-    -radius * 55,
-    -radius * 30,
-    -radius * 20,
-    0,
-    radius * 55,
-    radius * 30,
-    radius * 20,
+    -radius * 32 - 1,
+    -radius * 30 + 1,
+    -radius * 28 + 2,
+    // 0,
+    // radius * 35,
+    // radius * 30,
+    // radius * 25,
 ]
 
 const optimalGridSize = radius * 2.6755 //this is a magic number from practical tests
@@ -51,7 +61,7 @@ const onFrameEnd = (frameCount: number) => {
         CIRCLES.push({
             index: CIRCLES.length,
             radius,
-            velocity: { x: factor / 10, y: 10 },
+            velocity: { x: 15, y: 10 },
             // color: [255, 255, 0],
             color: colors[CIRCLES.length] as [number, number, number],
             position: {

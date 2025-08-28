@@ -5,8 +5,6 @@ import {
 } from './constants'
 import { Circle } from './types'
 
-const TINY_OFFSET = 0.0000001
-
 const handleWallYCollision = (circle: Circle) => {
     circle.velocity.y *= -CIRCLE_BOUNCINESS
     circle.velocity.x *= CIRCLE_BOUNCINESS
@@ -64,22 +62,22 @@ const handleWallCollisions = (
     )
 
     if (y1) {
-        circle.position.y = maxHeight - (circle.radius + TINY_OFFSET)
+        circle.position.y = maxHeight - circle.radius
         handleWallYCollision(circle)
     }
 
     if (y) {
-        circle.position.y = TINY_OFFSET + circle.radius
+        circle.position.y = circle.radius
         handleWallYCollision(circle)
     }
 
     if (x1) {
-        circle.position.x = maxWidth - (circle.radius + TINY_OFFSET)
+        circle.position.x = maxWidth - circle.radius
         handleWallXCollision(circle)
     }
 
     if (x) {
-        circle.position.x = TINY_OFFSET + circle.radius
+        circle.position.x = circle.radius
         handleWallXCollision(circle)
     }
 }
@@ -217,9 +215,6 @@ const getSpatialGrid = (
         let gridY = Math.floor(y / cellHeight)
         let gridX = Math.floor(x / cellWidth)
 
-        // gridY = gridY >= GRID_DIMENSION ? GRID_DIMENSION - 1 : gridY
-        // gridX = gridX >= GRID_DIMENSION ? GRID_DIMENSION - 1 : gridX
-
         const gridCellIndex = gridY * gridDimension + gridX
         grid[gridCellIndex].items.push(circles[i])
     }
@@ -268,11 +263,13 @@ const resolveCollision = (
 
         const dot = circle.velocity.x * cX + circle.velocity.y * cY
 
-        cX *= dot * 2
-        cY *= dot * 2
+        if (dot < 0) {
+            cX *= dot * 2
+            cY *= dot * 2
 
-        circle.velocity.x -= cX * CIRCLE_BOUNCINESS
-        circle.velocity.y -= cY * CIRCLE_BOUNCINESS
+            circle.velocity.x -= cX * CIRCLE_BOUNCINESS
+            circle.velocity.y -= cY * CIRCLE_BOUNCINESS
+        }
     }
 
     reflect(circle)
@@ -282,8 +279,8 @@ const resolveCollision = (
 const determineCollision = (circle: Circle, otherCircle: Circle) => {
     const rad = circle.radius + otherCircle.radius
 
-    let dx = otherCircle.position.x - circle.position.x || TINY_OFFSET //FIXME: i don`t know how much this messes up the algorithm
-    let dy = otherCircle.position.y - circle.position.y || TINY_OFFSET
+    let dx = otherCircle.position.x - circle.position.x
+    let dy = otherCircle.position.y - circle.position.y
 
     if (dx * dx + dy * dy <= rad * rad) {
         return { dx, dy }
