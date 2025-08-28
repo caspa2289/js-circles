@@ -14,7 +14,6 @@
                 overflow: hidden;
             }
 
-            .canvas_2d,
             .canvas_webgpu {
                 height: 400px;
                 width: 400px;
@@ -32,13 +31,6 @@
     </head>
     <body>
         <div class="controls">
-            <label>
-                Rendering backend:
-                <select id="selector">
-                    <option value="2d">canvas 2d api</option>
-                    <option value="webgpu" selected>webgpu</option>
-                </select>
-            </label>
             <div id="fpsCounter"></div>
         </div>
         <div id="container"></div>

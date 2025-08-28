@@ -53,4 +53,7 @@ module.exports = {
     resolve: {
         extensions: ['.ts', '.js'],
     },
+    experiments: {
+        asyncWebAssembly: true,
+    },
 }
