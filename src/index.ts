@@ -3,9 +3,7 @@ import { MAX_CIRCLE_COUNT } from './constants'
 import { tick } from './physics'
 import { renderWebGPU, setupWebGPUContext } from './renderWebGPU'
 import { Circle } from './types'
-import { greet } from './physics-wasm/pkg'
-
-console.log(greet('ASS'))
+import { physics_tick } from './physics-wasm/pkg'
 
 const width = 400
 const height = 400
@@ -36,7 +34,8 @@ const onFrameEnd = (frameCount: number) => {
             index: CIRCLES.length,
             radius,
             velocity: { x: 2, y: -5 },
-            color: colors[CIRCLES.length] as [number, number, number],
+            // color: colors[CIRCLES.length] as [number, number, number],
+            color: [25, 25, 25],
             position: {
                 x: 30,
                 y: factor,
@@ -46,7 +45,8 @@ const onFrameEnd = (frameCount: number) => {
             index: CIRCLES.length,
             radius,
             velocity: { x: -2, y: -5 },
-            color: colors[CIRCLES.length] as [number, number, number],
+            // color: colors[CIRCLES.length] as [number, number, number],
+            color: [25, 25, 25],
             position: {
                 x: width - 30,
                 y: factor,
@@ -57,7 +57,8 @@ const onFrameEnd = (frameCount: number) => {
             index: CIRCLES.length,
             radius,
             velocity: { x: 3, y: 3 },
-            color: colors[CIRCLES.length] as [number, number, number],
+            // color: colors[CIRCLES.length] as [number, number, number],
+            color: [25, 25, 25],
             position: {
                 x: width / 2 - radius,
                 y: factor,
@@ -71,7 +72,6 @@ let frameCount = 0
 const runWebGPU = async (
     w: number,
     h: number,
-    circles: Circle[],
     callback: (frame: number) => void
 ) => {
     const setupData = await setupWebGPUContext(h, w)
@@ -86,10 +86,13 @@ const runWebGPU = async (
     const getNextFrame = (time: number) => {
         frameCount++
 
-        const physicsTime = tick(circles, width, height, gridDimension)
+        const a = performance.now()
+        const newCircles = physics_tick(CIRCLES, width, height, gridDimension)
+        CIRCLES = newCircles
+        const physicsTime = performance.now() - a
 
         const renderingTime = renderWebGPU(
-            circles,
+            CIRCLES,
             device,
             context,
             pipeline,
@@ -133,5 +136,5 @@ const updateFPSCounter = (physicsTime: number, renderingTime: number) => {
 //         ]
 //     })
 //     console.log(result)
-runWebGPU(width, height, CIRCLES, onFrameEnd)
+runWebGPU(width, height, onFrameEnd)
 // })
