@@ -1,17 +1,22 @@
-import { BUFFER_BYTE_SIZE, MAX_CIRCLE_COUNT } from './constants'
-import { Circle } from './types'
+import {
+    BUFFER_BYTE_SIZE,
+    CIRCLE_COMPONENT_COUNT,
+    MAX_CIRCLE_COUNT,
+} from './constants'
 
 const circleShader = `
 struct Particle {
-    pos: vec2<f32>,
-    color: vec3<f32>
+  color: vec3<f32>,
+  radius: f32,
+  velocity: vec2<f32>,
+  pos: vec2<f32>,
 }
 
 @group(0) @binding(0) var<storage, read> data: array<Particle>;
 
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
-    @location(0) color : vec3<f32>          
+    @location(0) color : vec4<f32>          
 }
 
 @vertex
@@ -20,7 +25,6 @@ fn vertex_main(
 @builtin(instance_index) InstanceIndex : u32,
 ) -> VertexOutput {
 
-    // let scaleBall:f32 = 0.0215;
     let scaleBall:f32 = 0.0215 * 0.65;
     let a:f32 = 1.0 * scaleBall;
     let b:f32 = 0.71 * scaleBall;
@@ -61,15 +65,18 @@ fn vertex_main(
     let xy = pos[VertexIndex] + positionInstance;
 
     output.Position = vec4<f32>(xy, 0.0, 1.0);
-    // output.color = pow(data[InstanceIndex].color, vec3f(2.2));
-    // output.color = normalize(data[InstanceIndex].color);
-    output.color = data[InstanceIndex].color;
+    output.color = vec4(data[InstanceIndex].color, 1.0);
+
+    if (data[InstanceIndex].radius == 0.0) {
+        output.color.a = 0.0;
+    }
+
     return output;
 }
 
 @fragment
-    fn fragment_main(@location(0) color: vec3<f32>) -> @location(0) vec4<f32> {
-    return vec4<f32>(color,1.0);
+    fn fragment_main(@location(0) color: vec4<f32>) -> @location(0) vec4<f32> {
+    return color;
 }
 `
 
@@ -108,6 +115,7 @@ export const setupWebGPUContext = async (height: number, width: number) => {
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
         device,
         format,
+        alphaMode: 'premultiplied',
     })
 
     const pipeline = device.createRenderPipeline({
@@ -160,37 +168,16 @@ export const setupWebGPUContext = async (height: number, width: number) => {
 }
 
 export const renderWebGPU = (
-    circles: Circle[],
+    circles: Float32Array,
     device: GPUDevice,
     context: GPUCanvasContext,
     pipeline: GPURenderPipeline,
     bindGroup: GPUBindGroup,
-    buffer: GPUBuffer,
-    width: number,
-    height: number
+    buffer: GPUBuffer
 ) => {
+    // console.log(circles)
+
     const startTime = performance.now()
-
-    // const circleData = circles.reduce((res, circle) => {
-    //     const screenSpaceX = (circle.position.x / width) * 2 - 1
-    //     const screenSpaceY = (circle.position.y / height) * -2 + 1
-
-    //     return [...res, screenSpaceX, screenSpaceY]
-    // }, [] as number[])
-
-    const circleData: number[] = []
-    //this works in 0.5ms< while the reduce one takes >50ms at 1500 elements :o
-    //i wonder if babel takes care of that under the hood. It sure should.
-    for (let i = 0; i < circles.length; i++) {
-        //webgpu screenspace is -1 to 1
-        //FIXME: do it in the shader, pass values via uniform buffer. Or don`t.
-        //this takes byte layout into account
-        circleData[i * 8] = (circles[i].position.x / width) * 2 - 1
-        circleData[i * 8 + 1] = (circles[i].position.y / height) * -2 + 1
-        circleData[i * 8 + 4] = circles[i].color[0]
-        circleData[i * 8 + 5] = circles[i].color[1]
-        circleData[i * 8 + 6] = circles[i].color[2]
-    }
 
     const uploadBuffer = device.createBuffer({
         label: 'particle buffer',
@@ -199,7 +186,7 @@ export const renderWebGPU = (
         mappedAtCreation: true,
     })
 
-    new Float32Array(uploadBuffer.getMappedRange()).set(circleData)
+    new Float32Array(uploadBuffer.getMappedRange()).set(circles)
     uploadBuffer.unmap()
 
     const encoder = device.createCommandEncoder({
@@ -222,7 +209,7 @@ export const renderWebGPU = (
 
     renderPass.setPipeline(pipeline)
     renderPass.setBindGroup(0, bindGroup)
-    renderPass.draw(6 * 4 * 2, circles.length)
+    renderPass.draw(6 * 4 * 2, circles.length / CIRCLE_COMPONENT_COUNT)
     renderPass.end()
 
     device.queue.submit([encoder.finish()])

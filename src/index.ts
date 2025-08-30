@@ -1,14 +1,23 @@
 import { colors } from './colors'
-import { MAX_CIRCLE_COUNT } from './constants'
-import { tick } from './physics'
+import {
+    CIRCLE_COMPONENT_COUNT,
+    COLOR_OFFSET,
+    MAX_CIRCLE_COUNT,
+    POSITION_OFFSET,
+    RADIUS_OFFSET,
+    VELOCITY_OFFSET,
+} from './constants'
 import { renderWebGPU, setupWebGPUContext } from './renderWebGPU'
-import { Circle } from './types'
 import { physics_tick } from './physics-wasm/pkg'
 
 const width = 400
 const height = 400
 
-let CIRCLES: Circle[] = []
+let CIRCLES: Float32Array = new Float32Array(
+    MAX_CIRCLE_COUNT * CIRCLE_COMPONENT_COUNT
+)
+
+let circleCount = 0
 
 const radius = 3
 
@@ -19,10 +28,7 @@ const optimalGridSize = radius * 2.6755 //this is a magic number from practical 
 const gridDimension = Math.trunc(width / optimalGridSize)
 
 const onFrameEnd = (frameCount: number) => {
-    if (CIRCLES.length + xFactors.length * 3 >= MAX_CIRCLE_COUNT) {
-        // if (frameCount === 2300) {
-        //     console.log(CIRCLES)
-        // }
+    if (circleCount === MAX_CIRCLE_COUNT) {
         // console.log(frameCount)
         return
     }
@@ -30,40 +36,19 @@ const onFrameEnd = (frameCount: number) => {
     if (frameCount % 3 !== 0) return
 
     xFactors.forEach((factor) => {
-        CIRCLES.push({
-            index: CIRCLES.length,
-            radius,
-            velocity: { x: 2, y: -5 },
-            // color: colors[CIRCLES.length] as [number, number, number],
-            color: [25, 25, 25],
-            position: {
-                x: 30,
-                y: factor,
-            },
-        })
-        CIRCLES.push({
-            index: CIRCLES.length,
-            radius,
-            velocity: { x: -2, y: -5 },
-            // color: colors[CIRCLES.length] as [number, number, number],
-            color: [25, 25, 25],
-            position: {
-                x: width - 30,
-                y: factor,
-            },
-        })
+        const index = circleCount * CIRCLE_COMPONENT_COUNT
 
-        CIRCLES.push({
-            index: CIRCLES.length,
-            radius,
-            velocity: { x: 3, y: 3 },
-            // color: colors[CIRCLES.length] as [number, number, number],
-            color: [25, 25, 25],
-            position: {
-                x: width / 2 - radius,
-                y: factor,
-            },
-        })
+        circleCount += 1
+
+        CIRCLES[index + COLOR_OFFSET] = 1
+        CIRCLES[index + COLOR_OFFSET + 1] = 0
+        CIRCLES[index + COLOR_OFFSET + 2] = 0
+        CIRCLES[index + RADIUS_OFFSET] = radius
+        CIRCLES[index + VELOCITY_OFFSET] = 2 / 500
+        CIRCLES[index + VELOCITY_OFFSET + 1] = -5 / 500
+        //webgpu screenspace is -1 to 1
+        CIRCLES[index + POSITION_OFFSET] = (30 / width) * 2 - 1
+        CIRCLES[index + POSITION_OFFSET + 1] = (factor / height) * -2 + 1
     })
 }
 
@@ -87,8 +72,17 @@ const runWebGPU = async (
         frameCount++
 
         const a = performance.now()
-        const newCircles = physics_tick(CIRCLES, width, height, gridDimension)
-        CIRCLES = newCircles
+        CIRCLES = physics_tick(
+            CIRCLES,
+            width,
+            height,
+            gridDimension,
+            RADIUS_OFFSET,
+            COLOR_OFFSET,
+            VELOCITY_OFFSET,
+            POSITION_OFFSET
+        )
+
         const physicsTime = performance.now() - a
 
         const renderingTime = renderWebGPU(
@@ -97,9 +91,7 @@ const runWebGPU = async (
             context,
             pipeline,
             bindGroup,
-            buffer,
-            width,
-            height
+            buffer
         )
 
         callback(frameCount)
