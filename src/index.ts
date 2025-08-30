@@ -43,7 +43,7 @@ const onFrameEnd = (frameCount: number) => {
         CIRCLES[index + COLOR_OFFSET] = 1
         CIRCLES[index + COLOR_OFFSET + 1] = 0
         CIRCLES[index + COLOR_OFFSET + 2] = 0
-        CIRCLES[index + RADIUS_OFFSET] = radius
+        CIRCLES[index + RADIUS_OFFSET] = (radius / width) * 2
         CIRCLES[index + VELOCITY_OFFSET] = 2 / 500
         CIRCLES[index + VELOCITY_OFFSET + 1] = -5 / 500
         //webgpu screenspace is -1 to 1
@@ -74,9 +74,6 @@ const runWebGPU = async (
         const a = performance.now()
         CIRCLES = physics_tick(
             CIRCLES,
-            width,
-            height,
-            gridDimension,
             RADIUS_OFFSET,
             COLOR_OFFSET,
             VELOCITY_OFFSET,

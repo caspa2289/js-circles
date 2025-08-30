@@ -13,8 +13,67 @@ extern "C" {
 
 const PHYSICS_ITERATIONS_COUNT: i32 = 5;
 const GRAVITY_CONST: f32 = -0.5 / 500.0;
+const CIRCLE_BOUNCINESS: f32 = 0.6;
 
 const CIRCLE_COMPONENT_COUNT: usize = 8;
+
+struct BoxCollisionResult {
+    x: bool,
+    y: bool,
+    x1: bool,
+    y1: bool
+}
+
+fn determine_box_collisions(
+    circle: &mut[f32],
+    radius_offset: &usize,
+    position_offset: &usize,
+) -> BoxCollisionResult {
+
+    let pos_x = &circle[*position_offset];
+    let pos_y = &circle[*position_offset + 1];
+    let radius = &circle[*radius_offset];
+
+    BoxCollisionResult {
+        x: pos_x + radius <= -1.0,
+        y: pos_y + radius <= -1.0,
+        x1: pos_x + radius >= 1.0,
+        y1: pos_y + radius >= 1.0,
+    }
+}
+
+fn handle_wall_collisions(
+    circle: &mut[f32],
+    radius_offset: &usize,
+    position_offset: &usize,
+    velocity_offset: &usize,
+) {
+    let collision_data = determine_box_collisions(circle, radius_offset, position_offset);
+
+    if collision_data.y1 {
+        circle[*position_offset + 1] = 1.0 - circle[*radius_offset];
+        circle[*velocity_offset + 1] *= -CIRCLE_BOUNCINESS;
+        circle[*velocity_offset] *= CIRCLE_BOUNCINESS;
+    }
+
+    if collision_data.y {
+        circle[*position_offset + 1] = -1.0 - circle[*radius_offset];
+        circle[*velocity_offset + 1] *= -CIRCLE_BOUNCINESS;
+        circle[*velocity_offset] *= CIRCLE_BOUNCINESS;
+    }
+
+    if collision_data.x1 {
+        circle[*position_offset] = 1.0 - circle[*radius_offset];
+        circle[*velocity_offset] *= -CIRCLE_BOUNCINESS;
+        circle[*velocity_offset + 1] *= CIRCLE_BOUNCINESS;
+    }
+
+    if collision_data.x {
+        circle[*position_offset] = -1.0 - circle[*radius_offset];
+        circle[*velocity_offset] *= -CIRCLE_BOUNCINESS;
+        circle[*velocity_offset + 1] *= CIRCLE_BOUNCINESS;
+    }
+}
 
 //data layout
 // struct Particle {
@@ -27,9 +86,6 @@ const CIRCLE_COMPONENT_COUNT: usize = 8;
 #[wasm_bindgen]
 pub fn physics_tick(
     mut js_particles: Vec<f32>,
-    width: f64,
-    height: f64,
-    grid_dimension: f64,
     radius_offset: usize,
     color_offset: usize,
     velocity_offset: usize,
@@ -52,7 +108,12 @@ pub fn physics_tick(
             circle[position_offset] += circle[velocity_offset] / PHYSICS_ITERATIONS_COUNT as f32;
             circle[position_offset + 1] += circle[velocity_offset + 1] / PHYSICS_ITERATIONS_COUNT as f32;
 
-            // handleWallCollisions(circle, maxWidth, maxHeight)
+            handle_wall_collisions(
+                circle,
+                &radius_offset,
+                &position_offset,
+                &velocity_offset,
+            );
 
             x+= 8;
         }
