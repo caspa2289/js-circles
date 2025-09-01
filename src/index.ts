@@ -30,6 +30,7 @@ const gridDimension = Math.trunc(width / optimalGridSize)
 const onFrameEnd = (frameCount: number) => {
     if (circleCount === MAX_CIRCLE_COUNT) {
         // console.log(frameCount)
+        // console.log(CIRCLES)
         return
     }
 
@@ -75,7 +76,6 @@ const runWebGPU = async (
         CIRCLES = physics_tick(
             CIRCLES,
             RADIUS_OFFSET,
-            COLOR_OFFSET,
             VELOCITY_OFFSET,
             POSITION_OFFSET
         )

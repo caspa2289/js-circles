@@ -104,22 +104,22 @@ fn reflect(
     collision_x: f32,
     collision_y: f32,
 ) {
-    let mut cX = circle[*position_offset] - collision_x;
-    let mut cY = circle[*position_offset + 1] - collision_y;
+    let mut c_x = circle[*position_offset] - collision_x;
+    let mut c_y = circle[*position_offset + 1] - collision_y;
 
-    let c_magnitude = (cX * cX + cY * cY).sqrt();
+    let c_magnitude = (c_x * c_x + c_y * c_y).sqrt();
 
-    cX /= c_magnitude;
-    cY /= c_magnitude;
+    c_x /= c_magnitude;
+    c_y /= c_magnitude;
 
-    let dot = circle[*velocity_offset] * cX + circle[*velocity_offset + 1] * cY;
+    let dot = circle[*velocity_offset] * c_x + circle[*velocity_offset + 1] * c_y;
 
     if dot < 0.0 {
-        cX *= dot * 2.0;
-        cY *= dot * 2.0;
+        c_x *= dot * 2.0;
+        c_y *= dot * 2.0;
 
-        circle[*velocity_offset] -= cX * CIRCLE_BOUNCINESS;
-        circle[*velocity_offset + 1] -= cY * CIRCLE_BOUNCINESS;
+        circle[*velocity_offset] -= c_x * CIRCLE_BOUNCINESS;
+        circle[*velocity_offset + 1] -= c_y * CIRCLE_BOUNCINESS;
     }
 }
 
@@ -209,37 +209,51 @@ pub fn physics_tick(
                 &velocity_offset,
             );
 
-            let mut z = x.to_owned() + 8;
-            while z < js_particles.len() {
-                let other_circle: &mut[f32] = 
-                    js_particles
-                    .get_disjoint_mut([z..(z + CIRCLE_COMPONENT_COUNT)])
-                    .unwrap()[0];
+            x+= CIRCLE_COMPONENT_COUNT;
+        }
 
-                let collision_data = determine_collision(
-                    circle,
-                    other_circle,
-                    &position_offset,
-                    &radius_offset
-                );
+        let mut x = 0;
+        let mut y = CIRCLE_COMPONENT_COUNT;
+        while x < js_particles.len() {
+            let [circle, other_circle] = 
+                js_particles
+                .get_disjoint_mut([
+                    x..(x + CIRCLE_COMPONENT_COUNT),
+                    y..(y + CIRCLE_COMPONENT_COUNT)
+                ])
+                .unwrap();
 
-                match collision_data {
-                    Some(data) => {
-                        resolve_collision(
-                            circle,
-                            other_circle,
-                            data.dx,
-                            data.dy,
-                            &position_offset,
-                            &radius_offset,
-                            &velocity_offset
-                        )
-                    },
-                    _ => ()
-                }
+            let collision_data = determine_collision(
+                circle,
+                other_circle,
+                &position_offset,
+                &radius_offset
+            );
+
+            match collision_data {
+                Some(data) => {
+                    resolve_collision(
+                        circle,
+                        other_circle,
+                        data.dx,
+                        data.dy,
+                        &position_offset,
+                        &radius_offset,
+                        &velocity_offset
+                    )
+                },
+                _ => ()
             }
 
-            x+= 8;
+            if y + CIRCLE_COMPONENT_COUNT >= js_particles.len() {
+                x += CIRCLE_COMPONENT_COUNT;
+                y = x + CIRCLE_COMPONENT_COUNT; 
+                if x + CIRCLE_COMPONENT_COUNT >= js_particles.len() {
+                    x = js_particles.len();
+                }
+            } else {
+                y+= CIRCLE_COMPONENT_COUNT;
+            }
         }
 
         i+= 1;
