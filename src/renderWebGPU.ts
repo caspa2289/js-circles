@@ -83,8 +83,8 @@ fn vertex_main(
 export const setupWebGPUContext = async (height: number, width: number) => {
     const canvas = document.createElement('canvas')
     canvas.classList.add('canvas_webgpu')
-    canvas.width = width
-    canvas.height = height
+    canvas.width = width * window.devicePixelRatio
+    canvas.height = height * window.devicePixelRatio
 
     document.getElementById('container')?.replaceChildren(canvas)
 

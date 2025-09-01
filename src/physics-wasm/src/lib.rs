@@ -32,8 +32,8 @@ fn determine_box_collisions(
     let radius = &circle[*radius_offset];
 
     BoxCollisionResult {
-        x: pos_x + radius <= -1.0,
-        y: pos_y + radius <= -1.0,
+        x: pos_x - radius <= -1.0,
+        y: pos_y - radius <= -1.0,
         x1: pos_x + radius >= 1.0,
         y1: pos_y + radius >= 1.0,
     }
@@ -45,7 +45,7 @@ fn handle_wall_collisions(
     position_offset: &usize,
     velocity_offset: &usize,
 ) {
-    let collision_data = determine_box_collisions(circle, radius_offset, position_offset);
+    let collision_data: BoxCollisionResult = determine_box_collisions(circle, radius_offset, position_offset);
 
     if collision_data.y1 {
         circle[*position_offset + 1] = 1.0 - circle[*radius_offset];
@@ -54,7 +54,7 @@ fn handle_wall_collisions(
     }
 
     if collision_data.y {
-        circle[*position_offset + 1] = -1.0 - circle[*radius_offset];
+        circle[*position_offset + 1] = -1.0 + circle[*radius_offset];
         circle[*velocity_offset + 1] *= -CIRCLE_BOUNCINESS;
         circle[*velocity_offset] *= CIRCLE_BOUNCINESS;
     }
@@ -66,7 +66,7 @@ fn handle_wall_collisions(
     }
 
     if collision_data.x {
-        circle[*position_offset] = -1.0 - circle[*radius_offset];
+        circle[*position_offset] = -1.0 + circle[*radius_offset];
         circle[*velocity_offset] *= -CIRCLE_BOUNCINESS;
         circle[*velocity_offset + 1] *= CIRCLE_BOUNCINESS;
     }
@@ -223,6 +223,20 @@ pub fn physics_tick(
                 ])
                 .unwrap();
 
+            if circle[radius_offset] == 0.0 || other_circle[radius_offset] == 0.0 {
+                    if y + CIRCLE_COMPONENT_COUNT >= js_particles.len() {
+                        x += CIRCLE_COMPONENT_COUNT;
+                        y = x + CIRCLE_COMPONENT_COUNT; 
+                    if x + CIRCLE_COMPONENT_COUNT >= js_particles.len() {
+                        x = js_particles.len();
+                    }
+                } else {
+                    y+= CIRCLE_COMPONENT_COUNT;
+                }
+
+                continue;
+            }
+
             let collision_data = determine_collision(
                 circle,
                 other_circle,
@@ -246,8 +260,8 @@ pub fn physics_tick(
             }
 
             if y + CIRCLE_COMPONENT_COUNT >= js_particles.len() {
-                x += CIRCLE_COMPONENT_COUNT;
-                y = x + CIRCLE_COMPONENT_COUNT; 
+                    x += CIRCLE_COMPONENT_COUNT;
+                    y = x + CIRCLE_COMPONENT_COUNT; 
                 if x + CIRCLE_COMPONENT_COUNT >= js_particles.len() {
                     x = js_particles.len();
                 }

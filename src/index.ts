@@ -30,7 +30,6 @@ const gridDimension = Math.trunc(width / optimalGridSize)
 const onFrameEnd = (frameCount: number) => {
     if (circleCount === MAX_CIRCLE_COUNT) {
         // console.log(frameCount)
-        // console.log(CIRCLES)
         return
     }
 
