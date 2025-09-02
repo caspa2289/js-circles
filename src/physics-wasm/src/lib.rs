@@ -11,6 +11,7 @@ extern "C" {
 const PHYSICS_ITERATIONS_COUNT: i32 = 5;
 const GRAVITY_CONST: f32 = -0.5 / 500.0;
 const CIRCLE_BOUNCINESS: f32 = 0.6;
+const GRID_SIZE: f32 = 3.0 / 400.0 * 2.0 * 2.6755;
 
 const CIRCLE_COMPONENT_COUNT: usize = 8;
 
@@ -160,6 +161,139 @@ struct Particle {
     position: Vec2,
 }
 
+struct GridCell<'a> {
+    x: f32,
+    y: f32,
+    x1: f32,
+    y1: f32,
+    items: Vec<&'a mut Particle>,
+    relevant_cells: Vec<usize>,
+}
+
+fn get_spatial_grid(circles: &mut Vec<Particle>) -> Vec<GridCell<'_>> {
+
+    let mut grid: Vec<GridCell> = vec![];
+    let grid_dimension = (2.0 / GRID_SIZE).trunc() as usize;
+    let cell_size: f32 = 2.0 / grid_dimension as f32;
+
+    let mut i = 0;
+
+    while i < grid_dimension {
+        let mut x = 0;
+        while x < grid_dimension {
+            
+            let mut relevant_cells: Vec<usize> = vec![];
+
+            let cell_index = i * grid_dimension + x;
+
+            if cell_index % grid_dimension == 0 {
+                //cell is first in a row
+                if cell_index == 0 {
+                    //cell is first in first row
+                    relevant_cells = vec![1, grid_dimension, grid_dimension + 1];
+                } else if cell_index + grid_dimension == grid_dimension * grid_dimension {
+                    //cell is first in last row
+                    relevant_cells = vec![
+                        cell_index - grid_dimension,
+                        cell_index - grid_dimension + 1,
+                        cell_index + 1,
+                    ]
+                } else {
+                    relevant_cells = vec![
+                        cell_index - grid_dimension,
+                        cell_index - grid_dimension + 1,
+                        cell_index + 1,
+                        cell_index + grid_dimension,
+                        cell_index + grid_dimension + 1,
+                    ]
+                }
+             } else if (cell_index + 1) % grid_dimension == 0 {
+                //cell is last in a row
+                if cell_index == grid_dimension - 1 {
+                    //cell is last in first row
+                    relevant_cells = vec![
+                        grid_dimension - 2,
+                        grid_dimension * 2 - 2,
+                        grid_dimension * 2 - 1,
+                    ]
+                } else if cell_index == grid_dimension * grid_dimension - 1 {
+                    //cell is last in last row
+                    relevant_cells = vec![
+                        cell_index - grid_dimension - 1,
+                        cell_index - grid_dimension,
+                        cell_index - 1,
+                    ]
+                } else {
+                    relevant_cells = vec![
+                        cell_index - grid_dimension - 1,
+                        cell_index - grid_dimension,
+                        cell_index - 1,
+                        cell_index + grid_dimension - 1,
+                        cell_index + grid_dimension,
+                    ]
+                }
+            } else if (cell_index as i32) - (grid_dimension as i32) < 0 {
+                //cell is in first row
+                relevant_cells = vec![
+                    cell_index - 1,
+                    cell_index + 1,
+                    cell_index + grid_dimension - 1,
+                    cell_index + grid_dimension,
+                    cell_index + grid_dimension + 1,
+                ]
+            } else if cell_index + grid_dimension >= grid_dimension * grid_dimension {
+                //cell is in last row
+                relevant_cells = vec![
+                    cell_index - grid_dimension - 1,
+                    cell_index - grid_dimension,
+                    cell_index - grid_dimension + 1,
+                    cell_index - 1,
+                    cell_index + 1,
+                ]
+            } else {
+                //cell is not on any of the edges
+                relevant_cells = vec![
+                    cell_index - grid_dimension - 1,
+                    cell_index - grid_dimension,
+                    cell_index - grid_dimension + 1,
+                    cell_index - 1,
+                    cell_index + 1,
+                    cell_index + grid_dimension - 1,
+                    cell_index + grid_dimension,
+                    cell_index + grid_dimension + 1,
+                ]
+            }
+
+            grid.push(
+                GridCell {
+                    x: x as f32 * cell_size,
+                    y: i as f32 * cell_size,
+                    x1: x as f32 * cell_size + cell_size,
+                    y1: i as f32 * cell_size + cell_size,
+                    items: vec![],
+                    relevant_cells: relevant_cells
+                }
+            );
+
+            x+= 1;
+        }
+        i+= 1;
+    }
+
+    for circle in circles.iter_mut() {
+        //FIXME: the bug is definitely here, something wrong with negative positions i guess
+        let grid_y = (circle.position.y / cell_size).floor() as usize;
+        let grid_x = (circle.position.x / cell_size).floor() as usize;
+
+        let grid_cell_index = grid_y * grid_dimension + grid_x;
+        grid[grid_cell_index].items.push(circle);
+    }
+
+    return grid
+
+}
+
+
 fn to_particles(
     js_particles: &Vec<f32>,
     radius_offset: &usize,
@@ -231,25 +365,36 @@ pub fn physics_tick(
     let length = particles.len();
 
     while i < PHYSICS_ITERATIONS_COUNT {
+        for circle in particles.iter_mut() {
+            circle.velocity.y += GRAVITY_CONST / PHYSICS_ITERATIONS_COUNT as f32;
+            circle.position.x += circle.velocity.x / PHYSICS_ITERATIONS_COUNT as f32;
+            circle.position.y += circle.velocity.y / PHYSICS_ITERATIONS_COUNT as f32;
+
+            handle_wall_collisions(circle);
+        }
+
+        let mut grid = get_spatial_grid(&mut particles);
+
         let mut x = 0;
-        while x < length {
-            let mut z = x + 1;
-            while z < length {
-                let [circle, other_circle] = particles.get_disjoint_mut([x, z]).unwrap();
+        while x < grid.len() {
+            let mut y = 0;
+            while y < grid[x].items.len() {
+                let mut z = 1;
+                while z < grid[x].items.len() {
+                    if y <= z {
+                        z+= 1;
+                        continue;
+                    }
 
-                if z - x == 1 {
-                    circle.velocity.y += GRAVITY_CONST / PHYSICS_ITERATIONS_COUNT as f32;
-                    circle.position.x += circle.velocity.x / PHYSICS_ITERATIONS_COUNT as f32;
-                    circle.position.y += circle.velocity.y / PHYSICS_ITERATIONS_COUNT as f32;
+                    let [
+                        circle,
+                        other_circle
+                    ] = grid[x].items.get_disjoint_mut([y, z]).unwrap();
 
-                    handle_wall_collisions(circle);
-                }
-
-                let collision_data = determine_collision(
-                    circle,
-                    other_circle,
-                );
-                
+                    let collision_data = determine_collision(
+                        circle,
+                        other_circle,
+                    );
 
                     match collision_data {
                         Some(data) => {
@@ -263,10 +408,39 @@ pub fn physics_tick(
                         _ => ()
                     }
 
-                z+= 1;
+                    z+= 1;
+                }
+                
+                y += 1; 
             }
-            x += 1;
+
+            x+= 1;
         }
+        
+        //         //skip adjacent cells check if circle is fully contined within own cell
+        //         //in best case gets a 20% speed up, worst case - nothing
+        //         if (xCollision || yCollision || x1Collision || y1Collision) {
+        //             for (let v = 0; v < cell.relevantCells.length; v++) {
+        //                 const relevantCell = grid[cell.relevantCells[v]]
+        //                 for (let z = 0; z < relevantCell.items.length; z++) {
+        //                     const otherCircle = relevantCell.items[z]
+        //                     const collisionData = determineCollision(
+        //                         circle,
+        //                         otherCircle
+        //                     )
+        //                     if (collisionData) {
+        //                         resolveCollision(
+        //                             circle,
+        //                             otherCircle,
+        //                             collisionData.dx,
+        //                             collisionData.dy
+        //                         )
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
         i+= 1;
     }
 
