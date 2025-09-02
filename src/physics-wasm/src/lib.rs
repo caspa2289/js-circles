@@ -22,53 +22,46 @@ struct BoxCollisionResult {
 }
 
 fn determine_box_collisions(
-    circle: &mut[f32],
-    radius_offset: &usize,
-    position_offset: &usize,
+    circle: &mut Particle,
+    min_height: f32,
+    max_height: f32,
+    min_width: f32,
+    max_width: f32,
 ) -> BoxCollisionResult {
 
-    let pos_x = &circle[*position_offset];
-    let pos_y = &circle[*position_offset + 1];
-    let radius = &circle[*radius_offset];
-
     BoxCollisionResult {
-        x: pos_x - radius <= -1.0,
-        y: pos_y - radius <= -1.0,
-        x1: pos_x + radius >= 1.0,
-        y1: pos_y + radius >= 1.0,
+        x: circle.position.x - circle.radius <= min_width,
+        y: circle.position.y - circle.radius <= min_height,
+        x1: circle.position.x + circle.radius >= max_width,
+        y1: circle.position.y + circle.radius >= max_height,
     }
 }
 
-fn handle_wall_collisions(
-    circle: &mut[f32],
-    radius_offset: &usize,
-    position_offset: &usize,
-    velocity_offset: &usize,
-) {
-    let collision_data: BoxCollisionResult = determine_box_collisions(circle, radius_offset, position_offset);
+fn handle_wall_collisions(circle: &mut Particle) {
+    let collision_data: BoxCollisionResult = determine_box_collisions(circle, -1.0, 1.0, -1.0, 1.0);
 
     if collision_data.y1 {
-        circle[*position_offset + 1] = 1.0 - circle[*radius_offset];
-        circle[*velocity_offset + 1] *= -CIRCLE_BOUNCINESS;
-        circle[*velocity_offset] *= CIRCLE_BOUNCINESS;
+        circle.position.y = 1.0 - circle.radius;
+        circle.velocity.y *= -CIRCLE_BOUNCINESS;
+        circle.velocity.x *= CIRCLE_BOUNCINESS;
     }
 
     if collision_data.y {
-        circle[*position_offset + 1] = -1.0 + circle[*radius_offset];
-        circle[*velocity_offset + 1] *= -CIRCLE_BOUNCINESS;
-        circle[*velocity_offset] *= CIRCLE_BOUNCINESS;
+        circle.position.y = -1.0 + circle.radius;
+        circle.velocity.y *= -CIRCLE_BOUNCINESS;
+        circle.velocity.x *= CIRCLE_BOUNCINESS;
     }
 
     if collision_data.x1 {
-        circle[*position_offset] = 1.0 - circle[*radius_offset];
-        circle[*velocity_offset] *= -CIRCLE_BOUNCINESS;
-        circle[*velocity_offset + 1] *= CIRCLE_BOUNCINESS;
+        circle.position.x = 1.0 - circle.radius;
+        circle.velocity.x *= -CIRCLE_BOUNCINESS;
+        circle.velocity.y *= CIRCLE_BOUNCINESS;
     }
 
     if collision_data.x {
-        circle[*position_offset] = -1.0 + circle[*radius_offset];
-        circle[*velocity_offset] *= -CIRCLE_BOUNCINESS;
-        circle[*velocity_offset + 1] *= CIRCLE_BOUNCINESS;
+        circle.position.x = -1.0 + circle.radius;
+        circle.velocity.x *= -CIRCLE_BOUNCINESS;
+        circle.velocity.y *= CIRCLE_BOUNCINESS;
     }
 }
 
@@ -78,15 +71,13 @@ struct CollisionTestResult {
 }
 
 fn determine_collision(
-    circle: &mut[f32],
-    other_circle: &mut[f32],
-    position_offset: &usize,
-    radius_offset: &usize
+    circle: &mut Particle,
+    other_circle: &mut Particle,
 ) -> Option<CollisionTestResult> {
 
-    let rad = circle[*radius_offset] + other_circle[*radius_offset];
-    let dx = other_circle[*position_offset] - circle[*position_offset];
-    let dy = other_circle[*position_offset + 1] - circle[*position_offset + 1];
+    let rad = circle.radius + other_circle.radius;
+    let dx = other_circle.position.x - circle.position.x;
+    let dy = other_circle.position.y - circle.position.y;
 
     let is_colliding = dx * dx + dy * dy <= rad * rad;
 
@@ -98,75 +89,63 @@ fn determine_collision(
 }
 
 fn reflect(
-    circle: &mut[f32],
-    position_offset: &usize,
-    velocity_offset: &usize,
+    circle: &mut Particle,
     collision_x: f32,
     collision_y: f32,
 ) {
-    let mut c_x = circle[*position_offset] - collision_x;
-    let mut c_y = circle[*position_offset + 1] - collision_y;
+    let mut c_x = circle.position.x - collision_x;
+    let mut c_y = circle.position.y - collision_y;
 
     let c_magnitude = (c_x * c_x + c_y * c_y).sqrt();
 
     c_x /= c_magnitude;
     c_y /= c_magnitude;
 
-    let dot = circle[*velocity_offset] * c_x + circle[*velocity_offset + 1] * c_y;
+    let dot = circle.velocity.x * c_x + circle.velocity.y * c_y;
 
     if dot < 0.0 {
         c_x *= dot * 2.0;
         c_y *= dot * 2.0;
 
-        circle[*velocity_offset] -= c_x * CIRCLE_BOUNCINESS;
-        circle[*velocity_offset + 1] -= c_y * CIRCLE_BOUNCINESS;
+        circle.velocity.x -= c_x * CIRCLE_BOUNCINESS;
+        circle.velocity.y -= c_y * CIRCLE_BOUNCINESS;
     }
 }
 
 fn resolve_collision(
-    circle: &mut[f32],
-    other_circle: &mut[f32],
+    circle: &mut Particle,
+    other_circle: &mut Particle,
     dx: f32,
     dy: f32,
-    position_offset: &usize,
-    radius_offset: &usize,
-    velocity_offset: &usize
 ) {
     let mut dx = dx;
     let mut dy = dy;
 
     let distance = (dx * dx + dy * dy).sqrt();
 
-    let circle_x = circle[*position_offset];
-    let circle_y = circle[*position_offset + 1];
-    let circle_radius = circle[*radius_offset];
-    let other_circle_x = other_circle[*position_offset];
-    let other_circle_y = other_circle[*position_offset + 1];
-    let other_circle_radius = other_circle[*radius_offset];
-
     let (collision_x, collision_y) = (
         (
-            circle_x * other_circle_radius + other_circle_x * circle_radius
-        ) / (circle_radius + other_circle_radius),
+            circle.position.x * other_circle.radius + other_circle.position.x * circle.radius
+        ) / (circle.radius + other_circle.radius),
         (
-            circle_y * other_circle_radius + other_circle_y * circle_radius
-        ) / (circle_radius + other_circle_radius)
+            circle.position.y * other_circle.radius + other_circle.position.y * circle.radius
+        ) / (circle.radius + other_circle.radius)
     );
 
-    let step = circle_radius + other_circle_radius - distance;
+    let step = circle.radius + other_circle.radius - distance;
 
     if step > 0.0 {
         dx /= distance;
         dy /= distance;
 
-        circle[*position_offset] -= (dx * step) * 0.5;
-        circle[*position_offset + 1] -= (dy * step) * 0.5;
-        other_circle[*position_offset] += (dx * step) * 0.5;
-        other_circle[*position_offset + 1] += (dy * step) * 0.5;
+        circle.position.x -= (dx * step) * 0.5;
+        circle.position.y -= (dy * step) * 0.5;
+        other_circle.position.x += (dx * step) * 0.5;
+        other_circle.position.y += (dy * step) * 0.5;
     }
 
-    reflect(circle, position_offset, velocity_offset, collision_x, collision_y);
-    reflect(other_circle, position_offset, velocity_offset, collision_x, collision_y);
+    reflect(circle, collision_x, collision_y);
+    reflect(other_circle, collision_x, collision_y);
 }
 
 struct Vec2 {
@@ -245,81 +224,51 @@ pub fn physics_tick(
     position_offset: usize,
 ) -> Vec<f32> {
 
-    let particles = to_particles(&js_particles, &radius_offset, &color_offset, &velocity_offset, &position_offset);
+    let mut particles = to_particles(&js_particles, &radius_offset, &color_offset, &velocity_offset, &position_offset);
     
-    // let mut i = 0;
-    // while i < PHYSICS_ITERATIONS_COUNT {                
-    //     while x < js_particles.len() {
-    //         // let circle: &mut[f32] = js_particles.get_disjoint_mut([x..(x + CIRCLE_COMPONENT_COUNT)]).unwrap()[0];
-    //         //consider 0 radius circles being empty
-    //         if circle[radius_offset] == 0.0 {
-    //             x+= 8;
-    //             continue;
-    //         }
+    let mut i = 0;
 
-    //         circle[velocity_offset + 1] += GRAVITY_CONST / PHYSICS_ITERATIONS_COUNT as f32;
-    //         circle[position_offset] += circle[velocity_offset] / PHYSICS_ITERATIONS_COUNT as f32;
-    //         circle[position_offset + 1] += circle[velocity_offset + 1] / PHYSICS_ITERATIONS_COUNT as f32;
+    let length = particles.len();
 
-    //         handle_wall_collisions(
-    //             circle,
-    //             &radius_offset,
-    //             &position_offset,
-    //             &velocity_offset,
-    //         );
+    while i < PHYSICS_ITERATIONS_COUNT {
+        let mut x = 0;
+        while x < length {
+            let mut z = x + 1;
+            while z < length {
+                let [circle, other_circle] = particles.get_disjoint_mut([x, z]).unwrap();
 
-    //         x+= CIRCLE_COMPONENT_COUNT;
-    //     }
+                if z - x == 1 {
+                    circle.velocity.y += GRAVITY_CONST / PHYSICS_ITERATIONS_COUNT as f32;
+                    circle.position.x += circle.velocity.x / PHYSICS_ITERATIONS_COUNT as f32;
+                    circle.position.y += circle.velocity.y / PHYSICS_ITERATIONS_COUNT as f32;
 
-       
-        // while x < js_particles.len() {
-        //     let [circle, other_circle] = 
-        //         js_particles
-        //         .get_disjoint_mut([
-        //             x..(x + CIRCLE_COMPONENT_COUNT),
-        //             y..(y + CIRCLE_COMPONENT_COUNT)
-        //         ])
-        //         .unwrap();
+                    handle_wall_collisions(circle);
+                }
 
-        //     if circle[radius_offset] == 0.0 || other_circle[radius_offset] == 0.0 {
-        //             if y + CIRCLE_COMPONENT_COUNT >= js_particles.len() {
-        //                 x += CIRCLE_COMPONENT_COUNT;
-        //                 y = x + CIRCLE_COMPONENT_COUNT; 
-        //             if x + CIRCLE_COMPONENT_COUNT >= js_particles.len() {
-        //                 x = js_particles.len();
-        //             }
-        //         } else {
-        //             y+= CIRCLE_COMPONENT_COUNT;
-        //         }
+                let collision_data = determine_collision(
+                    circle,
+                    other_circle,
+                );
+                
 
-        //         continue;
-        //     }
+                    match collision_data {
+                        Some(data) => {
+                            resolve_collision(
+                                circle,
+                                other_circle,
+                                data.dx,
+                                data.dy,
+                            )
+                        },
+                        _ => ()
+                    }
 
-        //     let collision_data = determine_collision(
-        //         circle,
-        //         other_circle,
-        //         &position_offset,
-        //         &radius_offset
-        //     );
-
-        //     match collision_data {
-        //         Some(data) => {
-        //             resolve_collision(
-        //                 circle,
-        //                 other_circle,
-        //                 data.dx,
-        //                 data.dy,
-        //                 &position_offset,
-        //                 &radius_offset,
-        //                 &velocity_offset
-        //             )
-        //         },
-        //         _ => ()
-        //     }
-        // }
-
-    //     i+= 1;
-    // }
+                z+= 1;
+            }
+            x += 1;
+        }
+        i+= 1;
+    }
 
     return from_particles(particles, &js_particles, &radius_offset, &color_offset, &velocity_offset, &position_offset);
 }
