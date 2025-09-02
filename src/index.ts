@@ -75,6 +75,7 @@ const runWebGPU = async (
         CIRCLES = physics_tick(
             CIRCLES,
             RADIUS_OFFSET,
+            COLOR_OFFSET,
             VELOCITY_OFFSET,
             POSITION_OFFSET
         )
