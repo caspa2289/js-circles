@@ -7,39 +7,17 @@ import { renderWebGPU, setupWebGPUContext } from './renderWebGPU'
 import { Circle } from './types'
 
 // runPerformanceTest()
-const width = 400
-const height = 400
-
-let prevTime = 0
+const width = 600
+const height = 600
 
 let is2dEnabled = false
 let isWebGPUEnabled = false
 
-// let colorData: number[] = []
 let CIRCLES: Circle[] = []
 
 const radius = 3
 
-// const xFactors = [
-//     -radius * 55,
-//     -radius * 30,
-//     -radius * 20,
-//     0,
-//     radius * 55,
-//     radius * 30,
-//     radius * 20,
-// ]
-
-const xFactors = [
-    radius * 32.1,
-    radius * 30,
-    radius * 27.9,
-    radius * 25.8,
-    // 0,
-    // radius * 35,
-    // radius * 30,
-    // radius * 25,
-]
+const xFactors = [radius * 32.1, radius * 30, radius * 27.9, radius * 25.8]
 
 const optimalGridSize = radius * 2.6755 //this is a magic number from practical tests
 
@@ -61,8 +39,8 @@ const onFrameEnd = (frameCount: number) => {
             index: CIRCLES.length,
             radius,
             velocity: { x: 2, y: -5 },
-            // color: [255, 255, 0],
-            color: colors[CIRCLES.length] as [number, number, number],
+            color: [255, 255, 0],
+            // color: colors[CIRCLES.length] as [number, number, number],
             position: {
                 x: 30,
                 y: factor,
@@ -72,8 +50,8 @@ const onFrameEnd = (frameCount: number) => {
             index: CIRCLES.length,
             radius,
             velocity: { x: -2, y: -5 },
-            // color: [255, 255, 0],
-            color: colors[CIRCLES.length] as [number, number, number],
+            color: [255, 255, 0],
+            // color: colors[CIRCLES.length] as [number, number, number],
             position: {
                 x: width - 30,
                 y: factor,
@@ -84,8 +62,8 @@ const onFrameEnd = (frameCount: number) => {
             index: CIRCLES.length,
             radius,
             velocity: { x: 3, y: 3 },
-            // color: [255, 255, 0],
-            color: colors[CIRCLES.length] as [number, number, number],
+            color: [255, 255, 0],
+            // color: colors[CIRCLES.length] as [number, number, number],
             position: {
                 x: width / 2 - radius,
                 y: factor,

@@ -21,7 +21,7 @@ fn vertex_main(
 ) -> VertexOutput {
 
     // let scaleBall:f32 = 0.0215;
-    let scaleBall:f32 = 0.0215 * 0.65;
+    let scaleBall:f32 = 0.0215 * 0.4;
     let a:f32 = 1.0 * scaleBall;
     let b:f32 = 0.71 * scaleBall;
     let c:f32 = 0.923 * scaleBall;
@@ -76,8 +76,8 @@ fn vertex_main(
 export const setupWebGPUContext = async (height: number, width: number) => {
     const canvas = document.createElement('canvas')
     canvas.classList.add('canvas_webgpu')
-    canvas.width = width
-    canvas.height = height
+    canvas.width = width * window.devicePixelRatio
+    canvas.height = height * window.devicePixelRatio
 
     document.getElementById('container')?.replaceChildren(canvas)
 
