@@ -308,6 +308,8 @@ export const tick = (
             //FIXME: maybe try some fancy sorting algorithm
             return circle0.position.x - circle1.position.x
         })
+        // https://publications.scss.tcd.ie/tech-reports/reports.99/TCD-CS-1999-10.pdf
+        // a quicksort is proposed for initial sorting, and insertion sort for subsequent sortings
 
         const collisionGroups: Circle[][] = []
 
