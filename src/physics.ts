@@ -301,73 +301,150 @@ export const tick = (
             circle.velocity.y += GRAVITY_CONST / PHYSICS_ITERATIONS_COUNT
             circle.position.x += circle.velocity.x / PHYSICS_ITERATIONS_COUNT
             circle.position.y += circle.velocity.y / PHYSICS_ITERATIONS_COUNT
-
             handleWallCollisions(circle, maxWidth, maxHeight)
         }
 
-        const grid = getSpatialGrid(circles, maxWidth, maxHeight, gridDimension)
+        circles.sort((circle0, circle1) => {
+            //FIXME: maybe try some fancy sorting algorithm
+            return circle0.position.x - circle1.position.x
+        })
 
-        for (let y = 0; y < grid.length; y++) {
-            const cell = grid[y]
-            for (let ci = 0; ci < cell.items.length; ci++) {
-                const circle = cell.items[ci]
-                for (let x = 0; x < cell.items.length; x++) {
-                    if (x === ci) continue
+        const collisionGroups: Circle[][] = []
 
-                    const otherCircle = cell.items[x]
+        circles.forEach((circle, index) => {
+            let iterate = true
+            let nextIndex = index + 1
+            const intervalStartX = circle.position.x - circle.radius
+            const intervalEndX = circle.position.x + circle.radius
+            const intervalStartY = circle.position.y - circle.radius
+            const intervalEndY = circle.position.y + circle.radius
 
-                    const collisionData = determineCollision(
-                        circle,
-                        otherCircle
-                    )
+            const collisionGroup: Circle[] = [circle]
 
-                    if (collisionData) {
-                        resolveCollision(
-                            circle,
-                            otherCircle,
-                            collisionData.dx,
-                            collisionData.dy
-                        )
-                    }
+            while (iterate) {
+                if (nextIndex >= circles.length) {
+                    iterate = false
+                    break
                 }
+                const otherCircle = circles[nextIndex]
+                const intervalStartX1 =
+                    otherCircle.position.x - otherCircle.radius
+                const intervalEndX1 =
+                    otherCircle.position.x + otherCircle.radius
+                const intervalStartY1 =
+                    otherCircle.position.y - otherCircle.radius
+                const intervalEndY1 =
+                    otherCircle.position.y + otherCircle.radius
 
-                const {
-                    x: xCollision,
-                    y: yCollision,
-                    x1: x1Collision,
-                    y1: y1Collision,
-                } = determineBoxCollisions(
-                    circle,
-                    cell.x,
-                    cell.y,
-                    cell.x1,
-                    cell.y1
-                )
+                const intersectsX =
+                    (intervalStartX1 <= intervalEndX &&
+                        intervalStartX1 >= intervalStartX) ||
+                    (intervalEndX1 <= intervalEndX &&
+                        intervalEndX1 >= intervalStartX)
 
-                //skip adjacent cells check if circle is fully contined within own cell
-                //in best case gets a 20% speed up, worst case - nothing
-                if (xCollision || yCollision || x1Collision || y1Collision) {
-                    for (let v = 0; v < cell.relevantCells.length; v++) {
-                        const relevantCell = grid[cell.relevantCells[v]]
-                        for (let z = 0; z < relevantCell.items.length; z++) {
-                            const otherCircle = relevantCell.items[z]
-                            const collisionData = determineCollision(
-                                circle,
-                                otherCircle
-                            )
-                            if (collisionData) {
-                                resolveCollision(
-                                    circle,
-                                    otherCircle,
-                                    collisionData.dx,
-                                    collisionData.dy
-                                )
-                            }
-                        }
+                if (intersectsX) {
+                    const intersectsY =
+                        (intervalStartY1 <= intervalEndY &&
+                            intervalStartY1 >= intervalStartY) ||
+                        (intervalEndY1 <= intervalEndY &&
+                            intervalEndY1 >= intervalStartY)
+
+                    if (intersectsY) {
+                        collisionGroup.push(otherCircle)
                     }
+                    nextIndex += 1
+                } else {
+                    iterate = false
                 }
             }
-        }
+
+            if (collisionGroup.length > 1) {
+                collisionGroups.push(collisionGroup)
+            }
+        })
+
+        collisionGroups.forEach((collisionGroup) => {
+            for (let i = 1; i < collisionGroup.length; i++) {
+                const collisionData = determineCollision(
+                    collisionGroup[0],
+                    collisionGroup[i]
+                )
+
+                if (collisionData) {
+                    resolveCollision(
+                        collisionGroup[0],
+                        collisionGroup[i],
+                        collisionData.dx,
+                        collisionData.dy
+                    )
+                }
+            }
+        })
+
+        // for (let x = 0; x < circles.length; x++) {
+        //     const circle = circles[x]
+        //     circle.velocity.y += GRAVITY_CONST / PHYSICS_ITERATIONS_COUNT
+        //     circle.position.x += circle.velocity.x / PHYSICS_ITERATIONS_COUNT
+        //     circle.position.y += circle.velocity.y / PHYSICS_ITERATIONS_COUNT
+        //     handleWallCollisions(circle, maxWidth, maxHeight)
+        // }
+        // const grid = getSpatialGrid(circles, maxWidth, maxHeight, gridDimension)
+        // for (let y = 0; y < grid.length; y++) {
+        //     const cell = grid[y]
+        //     for (let ci = 0; ci < cell.items.length; ci++) {
+        //         const circle = cell.items[ci]
+        //         for (let x = 0; x < cell.items.length; x++) {
+        //             if (x === ci) continue
+        //             const otherCircle = cell.items[x]
+        //             const collisionData = determineCollision(
+        //                 circle,
+        //                 otherCircle
+        //             )
+        //             if (collisionData) {
+        //                 resolveCollision(
+        //                     circle,
+        //                     otherCircle,
+        //                     collisionData.dx,
+        //                     collisionData.dy
+        //                 )
+        //             }
+        //         }
+        //         const {
+        //             x: xCollision,
+        //             y: yCollision,
+        //             x1: x1Collision,
+        //             y1: y1Collision,
+        //         } = determineBoxCollisions(
+        //             circle,
+        //             cell.x,
+        //             cell.y,
+        //             cell.x1,
+        //             cell.y1
+        //         )
+        //         //skip adjacent cells check if circle is fully contined within own cell
+        //         //in best case gets a 20% speed up, worst case - nothing
+        //         if (xCollision || yCollision || x1Collision || y1Collision) {
+        //             for (let v = 0; v < cell.relevantCells.length; v++) {
+        //                 const relevantCell = grid[cell.relevantCells[v]]
+        //                 for (let z = 0; z < relevantCell.items.length; z++) {
+        //                     const otherCircle = relevantCell.items[z]
+        //                     const collisionData = determineCollision(
+        //                         circle,
+        //                         otherCircle
+        //                     )
+        //                     if (collisionData) {
+        //                         resolveCollision(
+        //                             circle,
+        //                             otherCircle,
+        //                             collisionData.dx,
+        //                             collisionData.dy
+        //                         )
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     return performance.now() - startTime

@@ -3,7 +3,7 @@
         "sourceMap": true,
         "outDir": "./dist/",
         "module": "es6",
-        "target": "ES2021",
+        "target": "esnext",
         "allowJs": true,
         "moduleResolution": "node",
         "strict": true,
